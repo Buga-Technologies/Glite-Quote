@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Plus, Trash2, Calculator, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 type BookSize = 'A6' | 'A5' | '6x9' | '7x10' | 'A4' | 'A3';
 type PaperType = 'Cream 100gsm' | 'Cream 80gsm' | 'Cream 70gsm' | 'White 80gsm' | 'White 70gsm' | 'Gloss 135gsm' | 'Gloss 115gsm';
@@ -196,6 +197,112 @@ export const QuoteCalculator: React.FC = () => {
       currency: 'NGN',
       minimumFractionDigits: 2
     }).format(amount);
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let yPosition = 30;
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('Quotation', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    const currentDate = new Date().toLocaleDateString('en-GB', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+    doc.text(`Date: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 25;
+
+    // Book Specifications Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Book Specifications', 20, yPosition);
+    yPosition += 10;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    
+    const specs = [
+      [`Size: ${quote.bookSize}`, ''],
+      [`Paper: ${quote.paperType}`, ''],
+      [`Cover: ${quote.coverType}`, ''],
+      [`Pages: ${quote.pageCount}`, ''],
+      [`Copies: ${quote.copies}`, ''],
+      [`Interior: ${quote.interiorType}`, '']
+    ];
+
+    specs.forEach(([label]) => {
+      doc.text(label, 25, yPosition);
+      yPosition += 6;
+    });
+
+    yPosition += 5;
+    doc.setFont('helvetica', 'bold');
+    const bookTotal = `NGN ${calculations.bookSpecsTotal.toLocaleString()}`;
+    doc.text('Book Specifications Total:', 25, yPosition);
+    doc.text(bookTotal, pageWidth - 25, yPosition, { align: 'right' });
+    yPosition += 15;
+
+    // Additional Services Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Additional Services', 20, yPosition);
+    yPosition += 10;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+
+    if (quote.includeDesign) {
+      doc.text('Design: Included', 25, yPosition);
+      yPosition += 6;
+    }
+
+    if (quote.includeISBN) {
+      doc.text('ISBN: Included', 25, yPosition);
+      yPosition += 6;
+    }
+
+    if (quote.includeBHR && calculations.bhrCost > 0) {
+      const bhrAmount = `NGN ${calculations.bhrCost.toLocaleString()}`;
+      doc.text('BHR:', 25, yPosition);
+      doc.text(bhrAmount, pageWidth - 25, yPosition, { align: 'right' });
+      yPosition += 6;
+    }
+
+    quote.others.forEach(item => {
+      if (item.description && item.cost > 0) {
+        const itemCost = `NGN ${item.cost.toLocaleString()}`;
+        doc.text(`${item.description}:`, 25, yPosition);
+        doc.text(itemCost, pageWidth - 25, yPosition, { align: 'right' });
+        yPosition += 6;
+      }
+    });
+
+    yPosition += 5;
+    doc.setFont('helvetica', 'bold');
+    const servicesTotal = `NGN ${calculations.additionalServicesTotal.toLocaleString()}`;
+    doc.text('Additional Services Total:', 25, yPosition);
+    doc.text(servicesTotal, pageWidth - 25, yPosition, { align: 'right' });
+    yPosition += 20;
+
+    // Final Quotation
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    const finalAmount = `NGN ${calculations.finalQuotation.toLocaleString()}`;
+    doc.text('Final Quotation:', 25, yPosition);
+    doc.text(finalAmount, pageWidth - 25, yPosition, { align: 'right' });
+
+    // Save the PDF
+    const fileName = `Glit-Quote-${currentDate.replace(/\s+/g, '-')}.pdf`;
+    doc.save(fileName);
   };
 
   return (
@@ -491,10 +598,19 @@ export const QuoteCalculator: React.FC = () => {
                 </div>
 
                 <div className="p-4 bg-primary-light rounded-lg">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-4">
                     <span className="text-xl font-bold text-primary">Final Quotation:</span>
                     <span className="text-2xl font-bold text-primary">{formatCurrency(calculations.finalQuotation)}</span>
                   </div>
+                  
+                  <Button 
+                    onClick={generatePDF}
+                    className="w-full"
+                    disabled={!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
                 </div>
               </div>
             </CardContent>
