@@ -6,7 +6,28 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Calculator, Download } from 'lucide-react';
+import { 
+  Plus, 
+  Trash2, 
+  Calculator, 
+  Download, 
+  BookOpen,
+  Maximize,
+  Layers,
+  FileText,
+  Copy,
+  FileStack,
+  Palette,
+  CheckSquare,
+  Settings,
+  PenTool,
+  Book,
+  Cpu,
+  Percent,
+  PlusCircle,
+  Receipt,
+  Wallet 
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 
 type BookSize = 'A6' | 'A5' | '6x9' | '7x10' | 'A4' | 'A3';
@@ -315,203 +336,278 @@ export const QuoteCalculator: React.FC = () => {
         
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Form Section */}
-          <Card className="shadow-[var(--shadow-card)]">
-            <CardHeader className="bg-primary text-primary-foreground">
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Book Specifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bookSize">Book Size</Label>
-                  <Select value={quote.bookSize} onValueChange={(value) => setQuote(prev => ({ ...prev, bookSize: value as BookSize }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A6">A6</SelectItem>
-                      <SelectItem value="A5">A5</SelectItem>
-                      <SelectItem value="6x9">6x9</SelectItem>
-                      <SelectItem value="7x10">7x10</SelectItem>
-                      <SelectItem value="A4">A4</SelectItem>
-                      <SelectItem value="A3">A3</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <div className="space-y-6">
+            {/* Book Specifications Card */}
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader className="bg-primary text-primary-foreground">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Book Specifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bookSize" className="flex items-center gap-2">
+                      <Maximize className="h-4 w-4 text-primary" />
+                      Book Size
+                    </Label>
+                    <Select value={quote.bookSize} onValueChange={(value) => setQuote(prev => ({ ...prev, bookSize: value as BookSize }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A6">A6</SelectItem>
+                        <SelectItem value="A5">A5</SelectItem>
+                        <SelectItem value="6x9">6x9</SelectItem>
+                        <SelectItem value="7x10">7x10</SelectItem>
+                        <SelectItem value="A4">A4</SelectItem>
+                        <SelectItem value="A3">A3</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="paperType">Paper Type</Label>
-                  <Select value={quote.paperType} onValueChange={(value) => setQuote(prev => ({ ...prev, paperType: value as PaperType }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select paper" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Cream 100gsm">Cream 100gsm</SelectItem>
-                      <SelectItem value="Cream 80gsm">Cream 80gsm</SelectItem>
-                      <SelectItem value="Cream 70gsm">Cream 70gsm</SelectItem>
-                      <SelectItem value="White 80gsm">White 80gsm</SelectItem>
-                      <SelectItem value="White 70gsm">White 70gsm</SelectItem>
-                      <SelectItem value="Gloss 135gsm">Gloss 135gsm</SelectItem>
-                      <SelectItem value="Gloss 115gsm">Gloss 115gsm</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <Label htmlFor="coverType" className="flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-primary" />
+                      Cover Type
+                    </Label>
+                    <Select value={quote.coverType} onValueChange={(value) => setQuote(prev => ({ ...prev, coverType: value as CoverType }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select cover" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Soft">Soft</SelectItem>
+                        <SelectItem value="Hard">Hard</SelectItem>
+                        <SelectItem value="Folded">Folded</SelectItem>
+                        <SelectItem value="Hard + Folded">Hard + Folded</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="interiorType">Interior Type</Label>
-                  <Select value={quote.interiorType} onValueChange={(value) => setQuote(prev => ({ ...prev, interiorType: value as InteriorType }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select interior" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="B/W">B/W</SelectItem>
-                      <SelectItem value="Colour">Colour</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="coverType">Cover Type</Label>
-                  <Select value={quote.coverType} onValueChange={(value) => setQuote(prev => ({ ...prev, coverType: value as CoverType }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cover" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Soft">Soft</SelectItem>
-                      <SelectItem value="Hard">Hard</SelectItem>
-                      <SelectItem value="Folded">Folded</SelectItem>
-                      <SelectItem value="Hard + Folded">Hard + Folded</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="pageCount">Page Count</Label>
-                  <Input
-                    id="pageCount"
-                    type="number"
-                    min="1"
-                    value={quote.pageCount || ''}
-                    onChange={(e) => setQuote(prev => ({ ...prev, pageCount: parseInt(e.target.value) || 0 }))}
-                    placeholder="Enter page count"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="copies">Copies</Label>
-                  <Input
-                    id="copies"
-                    type="number"
-                    min="1"
-                    value={quote.copies || ''}
-                    onChange={(e) => setQuote(prev => ({ ...prev, copies: parseInt(e.target.value) || 1 }))}
-                    placeholder="Enter copies"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="finishing">Finishing Cost (₦)</Label>
-                <Input
-                  id="finishing"
-                  type="number"
-                  min="0"
-                  value={quote.finishing || ''}
-                  onChange={(e) => setQuote(prev => ({ ...prev, finishing: parseFloat(e.target.value) || 0 }))}
-                  placeholder="Auto-calculated"
-                />
-              </div>
-
-              <Separator />
-
-              {/* Additional Services */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-primary">Additional Services</h3>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="includeDesign">Include Design (₦10,000)</Label>
-                  <Switch
-                    id="includeDesign"
-                    checked={quote.includeDesign}
-                    onCheckedChange={(checked) => setQuote(prev => ({ ...prev, includeDesign: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="includeISBN">Include ISBN (₦8,000)</Label>
-                  <Switch
-                    id="includeISBN"
-                    checked={quote.includeISBN}
-                    onCheckedChange={(checked) => setQuote(prev => ({ ...prev, includeISBN: checked }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="includeBHR">Include BHR</Label>
-                    <Switch
-                      id="includeBHR"
-                      checked={quote.includeBHR}
-                      onCheckedChange={(checked) => setQuote(prev => ({ ...prev, includeBHR: checked }))}
+                  <div>
+                    <Label htmlFor="pageCount" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Page Count
+                    </Label>
+                    <Input
+                      id="pageCount"
+                      type="number"
+                      min="1"
+                      value={quote.pageCount || ''}
+                      onChange={(e) => setQuote(prev => ({ ...prev, pageCount: parseInt(e.target.value) || 0 }))}
+                      placeholder="Enter page count"
                     />
                   </div>
-                  {quote.includeBHR && (
+
+                  <div>
+                    <Label htmlFor="copies" className="flex items-center gap-2">
+                      <Copy className="h-4 w-4 text-primary" />
+                      Copies
+                    </Label>
                     <Input
+                      id="copies"
                       type="number"
-                      min="0"
-                      value={quote.bhrAmount || ''}
-                      onChange={(e) => setQuote(prev => ({ ...prev, bhrAmount: parseFloat(e.target.value) || 0 }))}
-                      placeholder="BHR amount"
+                      min="1"
+                      value={quote.copies || ''}
+                      onChange={(e) => setQuote(prev => ({ ...prev, copies: parseInt(e.target.value) || 1 }))}
+                      placeholder="Enter copies"
                     />
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Others Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-primary">Others</h3>
-                  <Button onClick={addOtherItem} size="sm" variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
+                  </div>
                 </div>
 
-                {quote.others.map((item) => (
-                  <div key={item.id} className="flex gap-2">
-                    <Input
-                      placeholder="Description"
-                      value={item.description}
-                      onChange={(e) => updateOtherItem(item.id, 'description', e.target.value)}
+                {/* Total Pages to Print Badge */}
+                {quote.pageCount > 0 && quote.copies > 0 && (
+                  <div className="bg-accent rounded-lg p-3 mt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 font-medium">
+                        <Calculator className="h-4 w-4 text-primary" />
+                        Total Pages to Print:
+                      </span>
+                      <span className="font-bold text-primary">
+                        {(quote.pageCount * quote.copies).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Paper & Interior Card */}
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader className="bg-primary text-primary-foreground">
+                <CardTitle className="flex items-center gap-2">
+                  <FileStack className="h-5 w-5" />
+                  Paper & Interior
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="paperType" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Paper Type
+                    </Label>
+                    <Select value={quote.paperType} onValueChange={(value) => setQuote(prev => ({ ...prev, paperType: value as PaperType }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select paper" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cream 100gsm">Cream 100gsm</SelectItem>
+                        <SelectItem value="Cream 80gsm">Cream 80gsm</SelectItem>
+                        <SelectItem value="Cream 70gsm">Cream 70gsm</SelectItem>
+                        <SelectItem value="White 80gsm">White 80gsm</SelectItem>
+                        <SelectItem value="White 70gsm">White 70gsm</SelectItem>
+                        <SelectItem value="Gloss 135gsm">Gloss 135gsm</SelectItem>
+                        <SelectItem value="Gloss 115gsm">Gloss 115gsm</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="interiorType" className="flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-primary" />
+                      Interior Type
+                    </Label>
+                    <Select value={quote.interiorType} onValueChange={(value) => setQuote(prev => ({ ...prev, interiorType: value as InteriorType }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select interior" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="B/W">B/W</SelectItem>
+                        <SelectItem value="Colour">Colour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="finishing" className="flex items-center gap-2">
+                    <CheckSquare className="h-4 w-4 text-primary" />
+                    Finishing Cost (₦)
+                  </Label>
+                  <Input
+                    id="finishing"
+                    type="number"
+                    min="0"
+                    value={quote.finishing || ''}
+                    onChange={(e) => setQuote(prev => ({ ...prev, finishing: parseFloat(e.target.value) || 0 }))}
+                    placeholder="Auto-calculated"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Services Card */}
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader className="bg-primary text-primary-foreground">
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Additional Services
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="includeDesign" className="flex items-center gap-2">
+                      <PenTool className="h-4 w-4 text-primary" />
+                      Include Design (₦10,000)
+                    </Label>
+                    <Switch
+                      id="includeDesign"
+                      checked={quote.includeDesign}
+                      onCheckedChange={(checked) => setQuote(prev => ({ ...prev, includeDesign: checked }))}
                     />
-                    <Input
-                      type="number"
-                      placeholder="Cost"
-                      value={item.cost || ''}
-                      onChange={(e) => updateOtherItem(item.id, 'cost', parseFloat(e.target.value) || 0)}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="includeISBN" className="flex items-center gap-2">
+                      <Book className="h-4 w-4 text-primary" />
+                      Include ISBN (₦8,000)
+                    </Label>
+                    <Switch
+                      id="includeISBN"
+                      checked={quote.includeISBN}
+                      onCheckedChange={(checked) => setQuote(prev => ({ ...prev, includeISBN: checked }))}
                     />
-                    <Button onClick={() => removeOtherItem(item.id)} size="sm" variant="destructive">
-                      <Trash2 className="h-4 w-4" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="includeBHR" className="flex items-center gap-2">
+                        <Cpu className="h-4 w-4 text-primary" />
+                        Apply BHR
+                      </Label>
+                      <Switch
+                        id="includeBHR"
+                        checked={quote.includeBHR}
+                        onCheckedChange={(checked) => setQuote(prev => ({ ...prev, includeBHR: checked }))}
+                      />
+                    </div>
+                    {quote.includeBHR && (
+                      <Input
+                        type="number"
+                        min="0"
+                        value={quote.bhrAmount || ''}
+                        onChange={(e) => setQuote(prev => ({ ...prev, bhrAmount: parseFloat(e.target.value) || 0 }))}
+                        placeholder="BHR amount"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Others Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                      <PlusCircle className="h-4 w-4" />
+                      Others (Manual Adjustments)
+                    </h3>
+                    <Button onClick={addOtherItem} size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Item
                     </Button>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+
+                  {quote.others.map((item) => (
+                    <div key={item.id} className="flex gap-2">
+                      <Input
+                        placeholder="Description"
+                        value={item.description}
+                        onChange={(e) => updateOtherItem(item.id, 'description', e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Cost"
+                        value={item.cost || ''}
+                        onChange={(e) => updateOtherItem(item.id, 'cost', parseFloat(e.target.value) || 0)}
+                      />
+                      <Button onClick={() => removeOtherItem(item.id)} size="sm" variant="destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Calculation Results */}
           <Card className="shadow-[var(--shadow-card)]">
             <CardHeader className="bg-primary text-primary-foreground">
-              <CardTitle>Quote Breakdown</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Quotation Breakdown
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div className="space-y-3">
-                <h3 className="font-semibold text-primary">Book Specifications</h3>
+                <h3 className="font-semibold text-primary flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Book Specifications
+                </h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Paper Cost:</span>
@@ -535,42 +631,63 @@ export const QuoteCalculator: React.FC = () => {
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold">
-                    <span>Subtotal:</span>
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="h-3 w-3" />
+                      Book Specifications Total:
+                    </span>
                     <span>{formatCurrency(calculations.bookSpecsTotal)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h3 className="font-semibold text-primary">Additional Services</h3>
+                <h3 className="font-semibold text-primary flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Additional Services
+                </h3>
                 <div className="space-y-2 text-sm">
                   {quote.includeDesign && (
                     <div className="flex justify-between">
-                      <span>Design:</span>
+                      <span className="flex items-center gap-2">
+                        <PenTool className="h-3 w-3" />
+                        Design:
+                      </span>
                       <span>{formatCurrency(calculations.designCost)}</span>
                     </div>
                   )}
                   {quote.includeISBN && (
                     <div className="flex justify-between">
-                      <span>ISBN:</span>
+                      <span className="flex items-center gap-2">
+                        <Book className="h-3 w-3" />
+                        ISBN:
+                      </span>
                       <span>{formatCurrency(calculations.isbnCost)}</span>
                     </div>
                   )}
                   {quote.includeBHR && (
                     <div className="flex justify-between">
-                      <span>BHR:</span>
+                      <span className="flex items-center gap-2">
+                        <Cpu className="h-3 w-3" />
+                        BHR:
+                      </span>
                       <span>{formatCurrency(calculations.bhrCost)}</span>
                     </div>
                   )}
                   {calculations.othersCost > 0 && (
                     <div className="flex justify-between">
-                      <span>Others:</span>
+                      <span className="flex items-center gap-2">
+                        <PlusCircle className="h-3 w-3" />
+                        Others:
+                      </span>
                       <span>{formatCurrency(calculations.othersCost)}</span>
                     </div>
                   )}
                   <Separator />
                   <div className="flex justify-between font-semibold">
-                    <span>Subtotal:</span>
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-3 w-3" />
+                      Additional Services Total:
+                    </span>
                     <span>{formatCurrency(calculations.additionalServicesTotal)}</span>
                   </div>
                 </div>
@@ -580,12 +697,18 @@ export const QuoteCalculator: React.FC = () => {
               
               <div className="space-y-4">
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Raw Cost:</span>
+                  <span className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Raw Cost:
+                  </span>
                   <span>{formatCurrency(calculations.rawCost)}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="profitMargin">Profit Margin (%):</Label>
+                  <Label htmlFor="profitMargin" className="flex items-center gap-2">
+                    <Percent className="h-4 w-4 text-primary" />
+                    Profit Margin (%):
+                  </Label>
                   <Input
                     id="profitMargin"
                     type="number"
@@ -595,11 +718,17 @@ export const QuoteCalculator: React.FC = () => {
                     onChange={(e) => setQuote(prev => ({ ...prev, profitMargin: parseFloat(e.target.value) || 0 }))}
                     className="w-20"
                   />
+                  <span className="text-sm text-muted-foreground">
+                    ({formatCurrency(calculations.rawCost * (quote.profitMargin / 100))})
+                  </span>
                 </div>
 
                 <div className="p-4 bg-primary-light rounded-lg">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-xl font-bold text-primary">Final Quotation:</span>
+                    <span className="text-xl font-bold text-primary flex items-center gap-2">
+                      <Wallet className="h-5 w-5" />
+                      Final Quotation:
+                    </span>
                     <span className="text-2xl font-bold text-primary">{formatCurrency(calculations.finalQuotation)}</span>
                   </div>
                   
