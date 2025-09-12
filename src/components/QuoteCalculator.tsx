@@ -374,11 +374,11 @@ export const QuoteCalculator: React.FC = () => {
     // Paper & Interior Section with border and shadow
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
-    doc.rect(15, yPosition - 3, pageWidth - 30, 30, 'S');
+    doc.rect(15, yPosition - 3, pageWidth - 30, 25, 'S');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Paper & Interior', 20, yPosition + 8);
+    doc.text('Specifications', 20, yPosition + 8);
     yPosition += 15;
 
     doc.setFont('helvetica', 'normal');
@@ -386,8 +386,6 @@ export const QuoteCalculator: React.FC = () => {
     doc.text(`Paper Type: ${quote.paperType}`, 20, yPosition);
     yPosition += 5;
     doc.text(`Interior Type: ${quote.interiorType}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Finishing Cost: NGN ${quote.finishing.toLocaleString()}`, 20, yPosition);
     yPosition += 15;
 
     // Additional Services Section
