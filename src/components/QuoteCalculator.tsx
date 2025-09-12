@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -239,6 +241,8 @@ export const QuoteCalculator: React.FC = () => {
       minimumFractionDigits: 2
     }).format(amount);
   };
+
+  const { toast } = useToast();
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -486,10 +490,19 @@ export const QuoteCalculator: React.FC = () => {
     // Save the PDF
     const fileName = `Glit-Quote-${quotationId.replace(/\s+/g, '-')}.pdf`;
     doc.save(fileName);
+
+    // Show success toast
+    toast({
+      title: "Success!",
+      description: "Quotation PDF downloaded successfully!",
+      variant: "default",
+      className: "bg-primary text-primary-foreground border-0",
+    });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-primary-light p-4">
+      <Toaster />
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-2">Glit Quote</h1>
