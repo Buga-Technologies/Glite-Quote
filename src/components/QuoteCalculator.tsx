@@ -114,7 +114,7 @@ export const QuoteCalculator: React.FC = () => {
     paperType: '',
     interiorType: '',
     pageCount: 0,
-    copies: 1,
+    copies: 0,
     coverType: '',
     finishing: 0,
     includeDesign: false,
@@ -122,7 +122,7 @@ export const QuoteCalculator: React.FC = () => {
     includeBHR: false,
     bhrAmount: 0,
     others: [],
-    profitMargin: 20,
+    profitMargin: 0,
     customerName: '',
     customerEmail: '',
     customerPhone: '',
@@ -678,8 +678,8 @@ export const QuoteCalculator: React.FC = () => {
                       type="number"
                       min="1"
                       value={quote.copies || ''}
-                      onChange={(e) => setQuote(prev => ({ ...prev, copies: parseInt(e.target.value) || 1 }))}
-                      placeholder="Enter copies"
+                      onChange={(e) => setQuote(prev => ({ ...prev, copies: parseInt(e.target.value) || 0 }))}
+                      placeholder="Enter number of copies"
                     />
                   </div>
                 </div>
@@ -995,26 +995,51 @@ export const QuoteCalculator: React.FC = () => {
                   <span>{formatCurrency(calculations.rawCost)}</span>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="profitMargin" className="flex items-center gap-2">
                       <Percent className="h-4 w-4 text-primary" />
-                      Profit Margin (%):
+                      Profit Margin:
                     </Label>
-                    <div className="w-24">
-                      <Input
-                        id="profitMargin"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={quote.profitMargin}
-                        onChange={(e) => setQuote(prev => ({ ...prev, profitMargin: parseFloat(e.target.value) || 0 }))}
-                      />
+                    <div className="flex gap-2 items-center">
+                      <div className="w-24">
+                        <Input
+                          id="profitMargin"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={quote.profitMargin || ''}
+                          onChange={(e) => {
+                            const percentage = parseFloat(e.target.value) || 0;
+                            setQuote(prev => ({ ...prev, profitMargin: percentage }));
+                          }}
+                          placeholder="Enter %"
+                        />
+                      </div>
+                      <span className="text-muted-foreground">%</span>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground text-right">
-                    {quote.profitMargin}% = {formatCurrency((calculations.rawCost * quote.profitMargin) / 100)}
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="profitAmountNGN" className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      Profit (NGN):
+                    </Label>
+                    <div className="w-36">
+                      <Input
+                        id="profitAmountNGN"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={calculations.rawCost > 0 ? ((calculations.rawCost * quote.profitMargin) / 100) || '' : ''}
+                        onChange={(e) => {
+                          const ngnAmount = parseFloat(e.target.value) || 0;
+                          const newPercentage = calculations.rawCost > 0 ? (ngnAmount / calculations.rawCost) * 100 : 0;
+                          setQuote(prev => ({ ...prev, profitMargin: newPercentage }));
+                        }}
+                        placeholder="Enter amount"
+                      />
+                    </div>
                   </div>
                 </div>
 
