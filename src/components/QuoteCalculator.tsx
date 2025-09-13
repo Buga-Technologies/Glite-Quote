@@ -376,26 +376,45 @@ export const QuoteCalculator: React.FC = () => {
   };
 
   const generatePDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
+    try {
+      console.log('Starting PDF generation...');
+      if (!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType) {
+        console.error('Required fields are missing:', {
+          bookSize: quote.bookSize,
+          paperType: quote.paperType,
+          interiorType: quote.interiorType,
+          coverType: quote.coverType
+        });
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const doc = new jsPDF();
+      console.log('jsPDF instance created');
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
     
-    // Layout Constants
-    const margin = {
-      left: 25,
-      right: 25,
-      top: 25,
-      bottom: 25
-    };
-    const padding = {
-      small: 6,
-      medium: 10,
-      large: 16
-    };
-    const sectionSpacing = 25;
-    const contentWidth = pageWidth - margin.left - margin.right;
-    
-    let yPosition = margin.top;
+      // Layout Constants
+      const margin = {
+        left: 25,
+        right: 25,
+        top: 25,
+        bottom: 25
+      };
+      const padding = {
+        small: 6,
+        medium: 10,
+        large: 16
+      };
+      const sectionSpacing = 25;
+      const contentWidth = pageWidth - margin.left - margin.right;
+      
+      let yPosition = margin.top;
+      console.log('Layout constants initialized');
 
     // Header - Royal Blue container with white text
     const headerHeight = 50;
@@ -661,16 +680,26 @@ export const QuoteCalculator: React.FC = () => {
             contactCenter, yPosition, { align: 'center' });
 
     // Save the PDF
-    const fileName = `Glit-Quote-${quotationId.replace(/\s+/g, '-')}.pdf`;
-    doc.save(fileName);
+      console.log('Preparing to save PDF...');
+      const fileName = `Glit-Quote-${quotationId.replace(/\s+/g, '-')}.pdf`;
+      doc.save(fileName);
+      console.log('PDF saved as:', fileName);
 
-    // Show success toast
-    toast({
-      title: "Success!",
-      description: "Quotation PDF downloaded successfully!",
-      variant: "default",
-      className: "bg-primary text-primary-foreground border-0",
-    });
+      // Show success toast
+      toast({
+        title: "Success!",
+        description: "Quotation PDF downloaded successfully!",
+        variant: "default",
+        className: "bg-primary text-primary-foreground border-0",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -1259,7 +1288,11 @@ export const QuoteCalculator: React.FC = () => {
                   </div>
                   
                   <Button 
-                    onClick={generatePDF}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Download button clicked');
+                      generatePDF();
+                    }}
                     className="w-full"
                     disabled={!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType}
                   >
