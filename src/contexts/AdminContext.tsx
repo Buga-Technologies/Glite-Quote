@@ -33,7 +33,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       
       const { data: adminUsers, error } = await supabase
         .from('admin_users')
-        .select('username, password_hash')
+        .select('id, username, password_hash, created_at')
         .eq('username', username)
         .single();
 
