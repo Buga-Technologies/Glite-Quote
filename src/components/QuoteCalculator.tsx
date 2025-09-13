@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,46 @@ import {
   UserCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { supabase } from '@/integrations/supabase/client';
+
+// Database types
+interface PaperCost {
+  paper_type: string;
+  size: string;
+  cost_per_page: number;
+}
+
+interface TonerCost {
+  color_type: string;
+  size: string;
+  cost_per_page: number;
+}
+
+interface CoverCost {
+  cover_type: string;
+  size: string;
+  cost: number;
+}
+
+interface FinishingCost {
+  page_range_min: number;
+  page_range_max: number | null;
+  cost: number;
+}
+
+interface PackagingCost {
+  size: string;
+  cost: number;
+}
+
+interface AdditionalService {
+  service_name: string;
+  cost: number;
+}
+
+interface BHRSetting {
+  rate_per_hour: number;
+}
 
 type BookSize = 'A6' | 'A5' | '6x9' | '7x10' | 'A4' | 'A3';
 type PaperType = 'Cream 100gsm' | 'Cream 80gsm' | 'Cream 70gsm' | 'White 80gsm' | 'White 70gsm' | 'Gloss 135gsm' | 'Gloss 115gsm';
@@ -111,6 +151,97 @@ const calculateBHR = (pageCount: number, bookSize: BookSize, copies: number): nu
 };
 
 export const QuoteCalculator: React.FC = () => {
+  const { toast } = useToast();
+  
+  // Database costs state
+  const [paperCosts, setPaperCosts] = useState<PaperCost[]>([]);
+  const [tonerCosts, setTonerCosts] = useState<TonerCost[]>([]);
+  const [coverCosts, setCoverCosts] = useState<CoverCost[]>([]);
+  const [finishingCosts, setFinishingCosts] = useState<FinishingCost[]>([]);
+  const [packagingCosts, setPackagingCosts] = useState<PackagingCost[]>([]);
+  const [additionalServices, setAdditionalServices] = useState<AdditionalService[]>([]);
+  const [bhrSettings, setBhrSettings] = useState<BHRSetting>({ rate_per_hour: 3000 });
+  
+  // Load all cost data from database
+  useEffect(() => {
+    const fetchAllCosts = async () => {
+      try {
+        const [
+          paperResult,
+          tonerResult,
+          coverResult,
+          finishingResult,
+          packagingResult,
+          servicesResult,
+          bhrResult
+        ] = await Promise.all([
+          supabase.from('paper_costs').select('*'),
+          supabase.from('toner_costs').select('*'),
+          supabase.from('cover_costs').select('*'),
+          supabase.from('finishing_costs').select('*').order('page_range_min'),
+          supabase.from('packaging_costs').select('*'),
+          supabase.from('additional_services').select('*'),
+          supabase.from('bhr_settings').select('*').single()
+        ]);
+
+        setPaperCosts(paperResult.data || []);
+        setTonerCosts(tonerResult.data || []);
+        setCoverCosts(coverResult.data || []);
+        setFinishingCosts(finishingResult.data || []);
+        setPackagingCosts(packagingResult.data || []);
+        setAdditionalServices(servicesResult.data || []);
+        setBhrSettings(bhrResult.data || { rate_per_hour: 3000 });
+      } catch (error) {
+        console.error('Error loading cost data:', error);
+        // Keep fallback values
+        setBhrSettings({ rate_per_hour: 3000 });
+      }
+    };
+
+    fetchAllCosts();
+  }, []);
+  
+  // Helper functions using database data
+  const getPaperCost = (paperType: string, size: string): number => {
+    const cost = paperCosts.find(p => p.paper_type === paperType && p.size === size);
+    return cost ? cost.cost_per_page : 0;
+  };
+
+  const getTonerCost = (colorType: string, size: string): number => {
+    const cost = tonerCosts.find(t => t.color_type === colorType && t.size === size);
+    return cost ? cost.cost_per_page : 0;
+  };
+
+  const getCoverCost = (coverType: string, size: string): number => {
+    const cost = coverCosts.find(c => c.cover_type === coverType && c.size === size);
+    return cost ? cost.cost : 0;
+  };
+
+  const getFinishingCost = (pageCount: number): number => {
+    const finishing = finishingCosts.find(f => 
+      pageCount >= f.page_range_min && 
+      (f.page_range_max === null || pageCount <= f.page_range_max)
+    );
+    return finishing ? finishing.cost : 0;
+  };
+
+  const getPackagingCost = (size: string): number => {
+    const cost = packagingCosts.find(p => p.size === size);
+    return cost ? cost.cost : 0;
+  };
+
+  const getAdditionalServiceCost = (serviceName: string): number => {
+    const service = additionalServices.find(s => s.service_name === serviceName);
+    return service ? service.cost : 0;
+  };
+
+  const calculateBHR = (pageCount: number, bookSize: BookSize, copies: number): number => {
+    const factors: Record<BookSize, number> = {
+      A6: 8, A5: 4, '6x9': 2, '7x10': 2, A4: 2, A3: 1
+    };
+    const factor = factors[bookSize];
+    return (pageCount / factor / 48 * copies) * bhrSettings.rate_per_hour;
+  };
   const [quote, setQuote] = useState<QuoteData>({
     bookSize: '',
     paperType: '',
@@ -157,10 +288,10 @@ export const QuoteCalculator: React.FC = () => {
   // Auto-calculate finishing based on page count
   useEffect(() => {
     if (quote.pageCount > 0) {
-      const autoFinishing = calculateFinishing(quote.pageCount);
+      const autoFinishing = getFinishingCost(quote.pageCount);
       setQuote(prev => ({ ...prev, finishing: autoFinishing }));
     }
-  }, [quote.pageCount]);
+  }, [quote.pageCount, finishingCosts]);
 
   // Auto-calculate BHR
   useEffect(() => {
@@ -168,7 +299,7 @@ export const QuoteCalculator: React.FC = () => {
       const autoBHR = calculateBHR(quote.pageCount, quote.bookSize as BookSize, quote.copies);
       setQuote(prev => ({ ...prev, bhrAmount: autoBHR }));
     }
-  }, [quote.includeBHR, quote.pageCount, quote.bookSize, quote.copies]);
+  }, [quote.includeBHR, quote.pageCount, quote.bookSize, quote.copies, bhrSettings]);
 
   // Calculate all costs
   useEffect(() => {
@@ -176,14 +307,14 @@ export const QuoteCalculator: React.FC = () => {
       return;
     }
 
-    const paperCost = paperCosts[quote.paperType as PaperType][quote.bookSize as BookSize] * quote.pageCount * quote.copies;
-    const tonerCost = tonerCosts[quote.interiorType as InteriorType][quote.bookSize as BookSize] * quote.pageCount * quote.copies;
-    const coverCost = quote.coverType ? coverCosts[quote.coverType as CoverType][quote.bookSize as BookSize] * quote.copies : 0;
+    const paperCost = getPaperCost(quote.paperType, quote.bookSize) * quote.pageCount * quote.copies;
+    const tonerCost = getTonerCost(quote.interiorType, quote.bookSize) * quote.pageCount * quote.copies;
+    const coverCost = quote.coverType ? getCoverCost(quote.coverType, quote.bookSize) * quote.copies : 0;
     const finishingCost = quote.finishing * quote.copies;
-    const packagingCost = packagingCosts[quote.bookSize as BookSize] * quote.copies;
+    const packagingCost = getPackagingCost(quote.bookSize) * quote.copies;
     const bhrCost = quote.includeBHR ? quote.bhrAmount : 0;
-    const designCost = quote.includeDesign ? 10000 : 0;
-    const isbnCost = quote.includeISBN ? 8000 : 0;
+    const designCost = quote.includeDesign ? getAdditionalServiceCost('Design') : 0;
+    const isbnCost = quote.includeISBN ? getAdditionalServiceCost('ISBN') : 0;
     const othersCost = quote.others.reduce((sum, item) => sum + item.cost, 0);
 
     const bookSpecsTotal = paperCost + tonerCost + coverCost + finishingCost + packagingCost;
@@ -207,7 +338,7 @@ export const QuoteCalculator: React.FC = () => {
       rawCost,
       finalQuotation
     });
-  }, [quote, bulkDiscount]);
+  }, [quote, bulkDiscount, paperCosts, tonerCosts, coverCosts, packagingCosts, additionalServices]);
 
   const addOtherItem = () => {
     const newItem: OtherItem = {
@@ -241,8 +372,6 @@ export const QuoteCalculator: React.FC = () => {
       minimumFractionDigits: 2
     }).format(amount);
   };
-
-  const { toast } = useToast();
 
   const generatePDF = () => {
     const doc = new jsPDF();
