@@ -35,7 +35,8 @@ import {
   Shield
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import jsPDF from 'jspdf';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { supabase } from '@/integrations/supabase/client';
 
 // Database types
@@ -378,14 +379,8 @@ export const QuoteCalculator: React.FC = () => {
 
   const generatePDF = () => {
     try {
-      console.log('Starting PDF generation...');
+      // Validate required fields
       if (!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType) {
-        console.error('Required fields are missing:', {
-          bookSize: quote.bookSize,
-          paperType: quote.paperType,
-          interiorType: quote.interiorType,
-          coverType: quote.coverType
-        });
         toast({
           title: "Error",
           description: "Please fill in all required fields",
@@ -394,57 +389,422 @@ export const QuoteCalculator: React.FC = () => {
         return;
       }
 
-      const doc = new jsPDF();
-      console.log('jsPDF instance created');
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-    
-      // Layout Constants
-      const margin = {
-        left: 25,
-        right: 25,
-        top: 25,
-        bottom: 25
-      };
-      const padding = {
-        small: 6,
-        medium: 10,
-        large: 16
-      };
-      const sectionSpacing = 25;
-      const contentWidth = pageWidth - margin.left - margin.right;
-      
-      let yPosition = margin.top;
-      console.log('Layout constants initialized');
+      // Register fonts
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
+      // Generate quotation details
+      const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+      const currentDate = new Date().toLocaleDateString('en-GB');
+      
+      // Create document definition
+      const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [25, 25, 25, 25],
+        
+        styles: {
+          header: {
+            fontSize: 24,
+            bold: true,
+            color: 'white',
+            alignment: 'center',
+            margin: [0, 12, 0, 12],
+          },
+          sectionHeader: {
+            fontSize: 14,
+            bold: true,
+            margin: [0, 0, 0, 10],
+          },
+          label: {
+            bold: true,
+            fontSize: 10,
+          },
+          value: {
+            fontSize: 10,
+          },
+          amount: {
+            fontSize: 10,
+            alignment: 'right',
+          },
+          total: {
+            fontSize: 12,
+            bold: true,
+            alignment: 'right',
+          },
+          footer: {
+            fontSize: 10,
+            bold: true,
+            alignment: 'center',
+          },
+          validity: {
+            fontSize: 9,
+            italics: true,
+            alignment: 'center',
+            color: '#666666',
+          }
+        },
+
+        content: [
+          // Header
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                text: 'Glit Publisher Quote',
+                style: 'header',
+                fillColor: '#254BE3',
+                padding: [16, 12, 16, 12],
+              }]]
+            },
+            margin: [0, 0, 0, 10]
+          },
+
+          // Quote ID and Date
+          {
+            columns: [
+              { text: `Quotation ID: ${quotationId}`, style: 'value' },
+              { text: `Date: ${currentDate}`, style: 'value', alignment: 'right' }
+            ],
+            margin: [0, 0, 0, 20]
+          },
+
+          // Customer & Staff Information
+          ...(quote.customerName || quote.customerEmail || quote.customerPhone || quote.staffName || quote.staffId ? [{
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                columns: [
+                  {
+                    width: '*',
+                    stack: [
+                      { text: 'Customer Information', style: 'sectionHeader' },
+                      ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, style: 'value', margin: [0, 0, 0, 6] }] : [])
+                    ]
+                  },
+                  {
+                    width: '*',
+                    stack: [
+                      { text: 'Prepared By', style: 'sectionHeader' },
+                      ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, style: 'value', margin: [0, 0, 0, 6] }] : [])
+                    ]
+                  }
+                ],
+                fillColor: '#F8FAFC',
+                padding: 10
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          }] : []),
+
+          // Book Specifications
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                stack: [
+                  { text: 'Book Specifications', style: 'sectionHeader' },
+                  {
+                    style: 'tableStyle',
+                    table: {
+                      widths: ['50%', '50%'],
+                      body: [
+                        [{ text: 'Book Size:', style: 'label' }, { text: quote.bookSize, style: 'value' }],
+                        [{ text: 'Cover Type:', style: 'label' }, { text: quote.coverType, style: 'value' }],
+                        [{ text: 'Page Count:', style: 'label' }, { text: quote.pageCount.toString(), style: 'value' }],
+                        [{ text: 'Copies:', style: 'label' }, { text: quote.copies.toString(), style: 'value' }],
+                        [{ text: 'Total Pages:', style: 'label' }, { text: (quote.pageCount * quote.copies).toLocaleString(), style: 'value' }],
+                        [{ text: 'Paper Type:', style: 'label' }, { text: quote.paperType, style: 'value' }],
+                        [{ text: 'Interior Type:', style: 'label' }, { text: quote.interiorType, style: 'value' }],
+                        [
+                          { text: 'Printing Cost Total:', style: 'label' },
+                          { text: `NGN ${calculations.bookSpecsTotal.toLocaleString()}`, style: 'total' }
+                        ]
+                      ]
+                    },
+                    layout: {
+                      hLineWidth: (i) => 0.5,
+                      vLineWidth: (i) => 0.5,
+                      hLineColor: () => '#E2E8F0',
+                      vLineColor: () => '#E2E8F0',
+                      paddingLeft: () => 12,
+                      paddingRight: () => 12,
+                      paddingTop: () => 8,
+                      paddingBottom: () => 8
+                    }
+                  }
+                ]
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          },
+
+          // Additional Services
+          ...(quote.includeDesign || quote.includeISBN || quote.others.length > 0 ? [{
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                stack: [
+                  { text: 'Additional Services', style: 'sectionHeader' },
+                  {
+                    style: 'tableStyle',
+                    table: {
+                      widths: ['*', 'auto'],
+                      body: [
+                        ...(quote.includeDesign ? [[{ text: 'Design:', style: 'label' }, { text: `NGN ${calculations.designCost.toLocaleString()}`, style: 'amount' }]] : []),
+                        ...(quote.includeISBN ? [[{ text: 'ISBN:', style: 'label' }, { text: `NGN ${calculations.isbnCost.toLocaleString()}`, style: 'amount' }]] : []),
+                        ...quote.others.map(item => [
+                          { text: `Others: ${item.description}`, style: 'label' },
+                          { text: `NGN ${item.cost.toLocaleString()}`, style: 'amount' }
+                        ]),
+                        [
+                          { text: 'Additional Services Total:', style: 'label' },
+                          { text: `NGN ${calculations.additionalServicesTotal.toLocaleString()}`, style: 'total' }
+                        ]
+                      ]
+                    },
+                    layout: {
+                      hLineWidth: (i) => 0.5,
+                      vLineWidth: (i) => 0.5,
+                      hLineColor: () => '#E2E8F0',
+                      vLineColor: () => '#E2E8F0',
+                      paddingLeft: () => 12,
+                      paddingRight: () => 12,
+                      paddingTop: () => 8,
+                      paddingBottom: () => 8
+                    }
+                  }
+                ],
+                fillColor: '#F8FAFC',
+                padding: 10
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          }] : []),
+
+          // Bulk Discount
+          ...(bulkDiscount.apply && bulkDiscount.amount > 0 ? [{
+            text: `Bulk Discount: -NGN ${bulkDiscount.amount.toLocaleString()}`,
+            style: 'label',
+            color: '#DC2626',
+            margin: [0, 0, 0, 10]
+          }] : []),
+
+          // Final Quotation
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                text: `Final Quotation: NGN ${calculations.finalQuotation.toLocaleString()}`,
+                style: 'header',
+                fillColor: '#254BE3',
+                padding: [16, 16, 16, 16],
+              }]]
+            },
+            margin: [0, 20, 0, 20]
+          },
+
+          // Footer
+          {
+            canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#254BE3' }],
+            margin: [0, 0, 0, 12]
+          },
+          {
+            stack: [
+              { text: '08026978666', style: 'footer' },
+              { text: '09026557129', style: 'footer' },
+              { text: 'glitworkspaces@gmail.com', style: 'footer', margin: [0, 0, 0, 12] },
+              { text: 'Thank you for choosing Glit Publishers. This quotation is valid for 30 days.', style: 'validity' }
+            ]
+          }
+        ]
+      };
+
+      // Create and download PDF
+      const fileName = `Glit-Quote-${quotationId.replace(/\s+/g, '-')}.pdf`;
+      pdfMake.createPdf(docDefinition).download(fileName);
+
+      // Show success toast
+      toast({
+        title: "Success!",
+        description: "Quotation PDF downloaded successfully!",
+        variant: "default",
+        className: "bg-primary text-primary-foreground border-0",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+      
+      // Generate quotation ID and date
+      const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+      const currentDate = new Date().toLocaleDateString('en-GB', { 
+        day: '2-digit', 
+        month: 'numeric', 
+        year: 'numeric' 
+      });
+
+      // Define document styles
+      const styles = {
+        header: {
+          fontSize: 24,
+          bold: true,
+          color: 'white',
+          alignment: 'center',
+          margin: [0, 12, 0, 12],
+        },
+        sectionHeader: {
+          fontSize: 14,
+          bold: true,
+          margin: [0, 0, 0, 10],
+        },
+        label: {
+          bold: true,
+          fontSize: 10,
+        },
+        value: {
+          fontSize: 10,
+        },
+        amount: {
+          fontSize: 10,
+          alignment: 'right',
+        },
+        total: {
+          fontSize: 12,
+          bold: true,
+          alignment: 'right',
+        },
+        footer: {
+          fontSize: 10,
+          bold: true,
+          alignment: 'center',
+        },
+        validity: {
+          fontSize: 9,
+          italics: true,
+          alignment: 'center',
+          color: '#666666',
+        }
+      };
+
+      // Build document definition
+      const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [25, 25, 25, 25],
+        content: [
+          // Header section
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[
+                {
+                  text: 'Glit Publisher Quote',
+                  style: 'header',
+                  fillColor: '#254BE3',
+                  padding: [16, 12, 16, 12],
+                }
+              ]]
+            },
+          },
+          {
+            columns: [
+              { text: `Quotation ID: ${quotationId}`, style: 'value' },
+              { text: `Date: ${currentDate}`, style: 'value', alignment: 'right' }
+            ],
+            margin: [0, 10, 0, 20]
+          },
+
+          // Customer & Staff Information
+          ...(quote.customerName || quote.customerEmail || quote.customerPhone || quote.staffName || quote.staffId ? [{
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                columns: [
+                  // Customer Information
+                  {
+                    width: '*',
+                    stack: [
+                      { text: 'Customer Information', style: 'sectionHeader' },
+                      ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, style: 'value', margin: [0, 0, 0, 6] }] : [])
+                    ]
+                  },
+                  // Staff Information
+                  {
+                    width: '*',
+                    stack: [
+                      { text: 'Prepared By', style: 'sectionHeader' },
+                      ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, style: 'value', margin: [0, 0, 0, 6] }] : [])
+                    ]
+                  }
+                ],
+                fillColor: '#F8FAFC',
+                padding: 10
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          }] : []),
+
+          // Book Specifications
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                stack: [
+                  { text: 'Book Specifications', style: 'sectionHeader' },
+                  {
+                    layout: {
+                      defaultBorder: false,
+                      hLineWidth: () => 1,
+                      vLineWidth: () => 1,
+                      hLineColor: () => '#E2E8F0',
+                      vLineColor: () => '#E2E8F0',
+                      paddingLeft: () => 12,
+                      paddingRight: () => 12,
+                      paddingTop: () => 8,
+                      paddingBottom: () => 8
+                    },
+                    table: {
+                      widths: ['*', 'auto'],
+                      body: [
+                        [{ text: 'Book Size:', style: 'label' }, { text: quote.bookSize, style: 'value' }],
+                        [{ text: 'Cover Type:', style: 'label' }, { text: quote.coverType, style: 'value' }],
+                        [{ text: 'Page Count:', style: 'label' }, { text: quote.pageCount.toString(), style: 'value' }],
+                        [{ text: 'Copies:', style: 'label' }, { text: quote.copies.toString(), style: 'value' }],
+                        [{ text: 'Total Pages:', style: 'label' }, { text: (quote.pageCount * quote.copies).toLocaleString(), style: 'value' }],
+                        [{ text: 'Paper Type:', style: 'label' }, { text: quote.paperType, style: 'value' }],
+                        [{ text: 'Interior Type:', style: 'label' }, { text: quote.interiorType, style: 'value' }],
+                        [
+                          { text: 'Printing Cost Total:', style: 'label' },
+                          { text: `NGN ${calculations.bookSpecsTotal.toLocaleString()}`, style: 'total' }
+                        ]
+                      ]
+                    }
+                  }
+                ],
+                border: [1, 1, 1, 1],
+                borderColor: ['#E2E8F0', '#E2E8F0', '#E2E8F0', '#E2E8F0']
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          },
     // Header - Royal Blue container with white text
-    const headerHeight = 50;
-    
-    // Draw filled rectangle for header
-    doc.setDrawColor(37, 99, 235); // Royal Blue
-    doc.setFillColor(37, 99, 235); // Royal Blue
-    doc.setLineWidth(0);
-    const headerX = 0;
-    const headerY = 0;
-    const headerW = pageWidth;
-    const headerH = headerHeight;
-    
-    // Draw rectangle path
-    doc.lines(
-      [
-        [headerW, 0], // right
-        [0, headerH], // down
-        [-headerW, 0], // left
-        [0, -headerH], // up
-      ],
-      headerX,
-      headerY,
-      [1, 1],
-      'F'
-    );
-    
-    // Title
-    doc.setTextColor(255, 255, 255);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(24);
     doc.text('Glit Publisher Quote', pageWidth / 2, headerHeight/2 - 2, { align: 'center' });
