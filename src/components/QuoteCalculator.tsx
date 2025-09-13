@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
@@ -10,35 +10,91 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Plus, 
-  Trash2, 
-  Calculator, 
-  Download, 
-  BookOpen,
-  Maximize,
-  Layers,
-  FileText,
-  Copy,
-  FileStack,
-  Palette,
-  CheckSquare,
-  Settings,
-  PenTool,
-  Book,
-  Cpu,
-  Percent,
-  PlusCircle,
-  Receipt,
-  Wallet,
-  User,
-  UserCircle,
-  Shield
+import {
+  Plus, Trash2, Calculator, Download, BookOpen,
+  Maximize, Layers, FileText, Copy, FileStack,
+  Palette, CheckSquare, Settings, PenTool, Book,
+  Cpu, Percent, PlusCircle, Receipt, Wallet,
+  User, UserCircle, Shield
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { supabase } from '@/integrations/supabase/client';
+
+// Interfaces and Types
+interface Calculations {
+  paperCost: number;
+  tonerCost: number;
+  coverCost: number;
+  finishingCost: number;
+  packagingCost: number;
+  bhrCost: number;
+  bookSpecsTotal: number;
+  markupAmount: number;
+  vatAmount: number;
+  totalCost: number;
+  finalPrice: number;
+}
+
+interface Quote {
+  bookSize: string;
+  paperType: string;
+  interiorType: string;
+  coverType: string;
+  pageCount: number;
+  copies: number;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  staffName?: string;
+  staffId?: string;
+}
+
+type ContentStyle = {
+  fontSize?: number;
+  bold?: boolean;
+  color?: string;
+  alignment?: string;
+  margin?: number[];
+  fillColor?: string;
+  padding?: number[];
+};
+
+type PdfStyle = {
+  header: ContentStyle;
+  sectionHeader: ContentStyle;
+  label: ContentStyle;
+  value: ContentStyle;
+  total: ContentStyle;
+  headerTitle: ContentStyle;
+  headerSubtitle: ContentStyle;
+  quotationDetails: ContentStyle;
+  section: ContentStyle;
+  subtotal: ContentStyle;
+  discount: ContentStyle;
+  termsList: ContentStyle;
+  signature: ContentStyle;
+  signatureLabel: ContentStyle;
+};
+
+type PdfStyle = {
+  header: ContentStyle;
+  sectionHeader: ContentStyle;
+  label: ContentStyle;
+  value: ContentStyle;
+  total: ContentStyle;
+};
+
+export const QuoteCalculator: React.FC = () => {
+  designCost: number;
+  isbnCost: number;
+  othersCost: number;
+  bookSpecsTotal: number;
+  additionalServicesTotal: number;
+  rawCost: number;
+  finalQuotation: number;
+}
 
 // Database types
 interface PaperCost {
@@ -274,7 +330,7 @@ export const QuoteCalculator: React.FC = () => {
     amount: 0
   });
 
-  const [calculations, setCalculations] = useState({
+  const [calculations, setCalculations] = useState<Calculations>({
     paperCost: 0,
     tonerCost: 0,
     coverCost: 0,
@@ -378,9 +434,408 @@ export const QuoteCalculator: React.FC = () => {
     }).format(amount);
   };
 
-  const generatePDF = () => {
+  const generatePDF = async (): Promise<void> => {
+    // Input validation
+    if (!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Validate required fields
+      // Configure pdfMake with fonts
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
+      // Generate quote details
+      const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+      const fileName = `GlitPrints-Quote-${quotationId}.pdf`;
+      const currentDate = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'numeric',
+        year: 'numeric'
+      });
+
+      // Create and get PDF as blob
+      const pdfDoc = pdfMake.createPdf(docDefinition);
+      
+      await new Promise<void>((resolve, reject) => {
+        pdfDoc.getBlob((blob) => {
+          try {
+            // Download the PDF
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        }, (error) => {
+          reject(error);
+        });
+      });
+
+      // Show success message
+      toast({
+        title: "Success!",
+        description: "PDF Quote generated successfully!",
+        variant: "default",
+        className: "bg-primary text-primary-foreground border-0",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+
+      // Define PDF styles
+      const styles: PdfStyle = {
+        header: {
+          fontSize: 24,
+          bold: true,
+          color: 'white',
+          alignment: 'center',
+          margin: [0, 12, 0, 12],
+        },
+        headerTitle: {
+          fontSize: 24,
+          bold: true,
+          color: '#1a365d',
+        },
+        headerSubtitle: {
+          fontSize: 12,
+          color: '#4a5568',
+          margin: [0, 5, 0, 0],
+        },
+        sectionHeader: {
+          fontSize: 14,
+          bold: true,
+          color: '#2d3748',
+          fillColor: '#edf2f7',
+          margin: [0, 5],
+        },
+        label: {
+          fontSize: 10,
+          bold: true,
+        },
+        value: {
+          fontSize: 10,
+        },
+        total: {
+          fontSize: 12,
+          bold: true,
+          alignment: 'right',
+        },
+        quotationDetails: {
+          fontSize: 10,
+          margin: [0, 2],
+        },
+        section: {
+          margin: [0, 10],
+        },
+        subtotal: {
+          fontSize: 11,
+          bold: true,
+        },
+        discount: {
+          fontSize: 11,
+          bold: true,
+          color: '#2f855a',
+        },
+        termsList: {
+          fontSize: 10,
+          color: '#4a5568',
+        },
+        signature: {
+          margin: [0, 40, 0, 4],
+        },
+        signatureLabel: {
+          fontSize: 10,
+          color: '#4a5568',
+        },
+      };
+
+      // Create document definition
+      const docDefinition: TDocumentDefinitions = {
+        pageSize: 'A4',
+        pageMargins: [40, 60, 40, 60],
+        styles,
+        defaultStyle: {
+          fontSize: 10,
+          color: '#4a5568',
+        },
+        content: [
+          // Header Section
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                text: 'Glit Publisher Quote',
+                style: 'header',
+                fillColor: '#254BE3',
+                padding: [16, 12, 16, 12],
+              }]]
+            },
+            margin: [0, 0, 0, 10]
+          },
+          {
+            columns: [
+              { text: `Quotation ID: ${quotationId}`, style: 'value' },
+              { text: `Date: ${currentDate}`, style: 'value', alignment: 'right' }
+            ],
+            margin: [0, 0, 0, 20]
+          },
+
+          // Customer & Staff Information
+          ...(quote.customerName || quote.customerEmail || quote.customerPhone || quote.staffName || quote.staffId ? [{
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                columns: [
+                  {
+                    width: '*',
+                    stack: [
+                      { text: 'Customer Information', style: 'sectionHeader' },
+                      ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, style: 'value', margin: [0, 0, 0, 6] }] : [])
+                    ]
+                  },
+                  {
+                    width: '*',
+                    stack: [
+                      { text: 'Prepared By', style: 'sectionHeader' },
+                      ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, style: 'value', margin: [0, 0, 0, 6] }] : []),
+                      ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, style: 'value', margin: [0, 0, 0, 6] }] : [])
+                    ]
+                  }
+                ],
+                fillColor: '#F8FAFC',
+                padding: 10
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          }] : []),
+          
+          // Book Specifications
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                stack: [
+                  { text: 'Book Specifications', style: 'sectionHeader' },
+                  {
+                    style: 'tableStyle',
+                    table: {
+                      widths: ['50%', '50%'],
+                      body: [
+                        [{ text: 'Book Size:', style: 'label' }, { text: quote.bookSize, style: 'value' }],
+                        [{ text: 'Cover Type:', style: 'label' }, { text: quote.coverType, style: 'value' }],
+                        [{ text: 'Page Count:', style: 'label' }, { text: quote.pageCount.toString(), style: 'value' }],
+                        [{ text: 'Copies:', style: 'label' }, { text: quote.copies.toString(), style: 'value' }],
+                        [{ text: 'Total Pages:', style: 'label' }, { text: (quote.pageCount * quote.copies).toLocaleString(), style: 'value' }],
+                        [{ text: 'Paper Type:', style: 'label' }, { text: quote.paperType, style: 'value' }],
+                        [{ text: 'Interior Type:', style: 'label' }, { text: quote.interiorType, style: 'value' }],
+                        [
+                          { text: 'Printing Cost Total:', style: 'label' },
+                          { text: formatCurrency(calculations.bookSpecsTotal), style: 'total' }
+                        ]
+                      ]
+                    },
+                    layout: {
+                      hLineWidth: (i) => 0.5,
+                      vLineWidth: (i) => 0.5,
+                      hLineColor: () => '#E2E8F0',
+                      vLineColor: () => '#E2E8F0',
+                      paddingLeft: () => 12,
+                      paddingRight: () => 12,
+                      paddingTop: () => 8,
+                      paddingBottom: () => 8
+                    }
+                  }
+                ]
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          },
+
+          // Additional Services
+          ...(quote.includeDesign || quote.includeISBN || quote.others.length > 0 ? [{
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                stack: [
+                  { text: 'Additional Services', style: 'sectionHeader' },
+                  {
+                    style: 'tableStyle',
+                    table: {
+                      widths: ['*', 'auto'],
+                      body: [
+                        ...(quote.includeDesign ? [[{ text: 'Design:', style: 'label' }, { text: formatCurrency(calculations.designCost), style: 'amount' }]] : []),
+                        ...(quote.includeISBN ? [[{ text: 'ISBN:', style: 'label' }, { text: formatCurrency(calculations.isbnCost), style: 'amount' }]] : []),
+                        ...quote.others.map(item => [
+                          { text: `Others: ${item.description}`, style: 'label' },
+                          { text: formatCurrency(item.cost), style: 'amount' }
+                        ]),
+                        [
+                          { text: 'Additional Services Total:', style: 'label' },
+                          { text: formatCurrency(calculations.additionalServicesTotal), style: 'total' }
+                        ]
+                      ]
+                    },
+                    layout: {
+                      hLineWidth: (i) => 0.5,
+                      vLineWidth: (i) => 0.5,
+                      hLineColor: () => '#E2E8F0',
+                      vLineColor: () => '#E2E8F0',
+                      paddingLeft: () => 12,
+                      paddingRight: () => 12,
+                      paddingTop: () => 8,
+                      paddingBottom: () => 8
+                    }
+                  }
+                ],
+                fillColor: '#F8FAFC',
+                padding: 10
+              }]]
+            },
+            margin: [0, 0, 0, 20]
+          }] : []),
+
+          // Bulk Discount
+          ...(bulkDiscount.apply && bulkDiscount.amount > 0 ? [{
+            text: `Bulk Discount: -${formatCurrency(bulkDiscount.amount)}`,
+            style: 'label',
+            color: '#DC2626',
+            margin: [0, 0, 0, 10]
+          }] : []),
+
+          // Final Quotation
+          {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                text: `Final Quotation: ${formatCurrency(calculations.finalQuotation)}`,
+                style: 'header',
+                fillColor: '#254BE3',
+                padding: [16, 16, 16, 16],
+              }]]
+            },
+            margin: [0, 20, 0, 20]
+          },
+
+          // Terms & Conditions
+          {
+            style: 'section',
+            stack: [
+              { text: 'Terms & Conditions', style: 'termsHeader' },
+              { 
+                ul: [
+                  'This quotation is valid for 7 days from the date issued.',
+                  '50% advance payment is required to commence production.',
+                  'Production time varies based on specifications and quantity.',
+                  'Prices are subject to change without prior notice.'
+                ],
+                style: 'termsList'
+              }
+            ]
+          },
+          
+          // Footer
+          {
+            canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#254BE3' }],
+            margin: [0, 0, 0, 12]
+          },
+          {
+            stack: [
+              { text: '08026978666', style: 'footer' },
+              { text: '09026557129', style: 'footer' },
+              { text: 'glitworkspaces@gmail.com', style: 'footer', margin: [0, 0, 0, 12] },
+              { text: 'Thank you for choosing Glit Publishers. This quotation is valid for 30 days.', style: 'validity' }
+            ]
+          }
+        ],
+        styles: {
+          header: {
+            fontSize: 24,
+            bold: true,
+            color: 'white',
+            alignment: 'center',
+            margin: [0, 12, 0, 12],
+          },
+          sectionHeader: {
+            fontSize: 14,
+            bold: true,
+            margin: [0, 0, 0, 10],
+            color: '#2d3748',
+          },
+          label: {
+            bold: true,
+            fontSize: 10,
+          },
+          value: {
+            fontSize: 10,
+          },
+          amount: {
+            fontSize: 10,
+            alignment: 'right',
+          },
+          total: {
+            fontSize: 12,
+            bold: true,
+            alignment: 'right',
+            color: '#1a365d',
+          },
+          footer: {
+            fontSize: 10,
+            bold: true,
+            alignment: 'center',
+          },
+          validity: {
+            fontSize: 9,
+            italics: true,
+            alignment: 'center',
+            color: '#666666',
+          },
+          termsList: {
+            fontSize: 10,
+            color: '#4a5568',
+          },
+          signature: {
+            margin: [0, 40, 0, 4]
+          },
+          signatureLabel: {
+            fontSize: 10,
+            color: '#4a5568'
+          }
+        }
+      };
+      const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+      const currentDate = new Date().toLocaleDateString('en-GB', { 
+        day: '2-digit', 
+        month: 'numeric', 
+        year: 'numeric' 
+      });
+
+      // Create document definition
+      const docDefinition: TDocumentDefinitions = {
+        pageMargins: [25, 25, 25, 25],
+        content: [
       if (!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType) {
         toast({
           title: "Error",
@@ -397,7 +852,7 @@ export const QuoteCalculator: React.FC = () => {
       const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
       const currentDate = new Date().toLocaleDateString('en-GB');
       
-      // Document content definition
+      // Create document definition
       const docDefinition: TDocumentDefinitions = {
         pageSize: 'A4',
         pageMargins: [40, 60, 40, 60],
@@ -616,9 +1071,9 @@ export const QuoteCalculator: React.FC = () => {
             fontSize: 10,
             color: '#4a5568'
           }
-        }}
-        ],
-        styles: {
+        }
+      ],
+      styles: {
           headerTitle: {
             fontSize: 24,
             bold: true,
@@ -953,56 +1408,51 @@ export const QuoteCalculator: React.FC = () => {
         year: 'numeric' 
       });
 
-      // Define document styles
-      const styles = {
-        header: {
-          fontSize: 24,
-          bold: true,
-          color: 'white',
-          alignment: 'center',
-          margin: [0, 12, 0, 12],
-        },
-        sectionHeader: {
-          fontSize: 14,
-          bold: true,
-          margin: [0, 0, 0, 10],
-        },
-        label: {
-          bold: true,
-          fontSize: 10,
-        },
-        value: {
-          fontSize: 10,
-        },
-        amount: {
-          fontSize: 10,
-          alignment: 'right',
-        },
-        total: {
-          fontSize: 12,
-          bold: true,
-          alignment: 'right',
-        },
-        footer: {
-          fontSize: 10,
-          bold: true,
-          alignment: 'center',
-        },
-        validity: {
-          fontSize: 9,
-          italics: true,
-          alignment: 'center',
-          color: '#666666',
-        }
-      };
-
-      // Build document definition
-      const docDefinition = {
-        pageSize: 'A4',
-        pageMargins: [25, 25, 25, 25],
-        content: [
-          // Header section
-          {
+      try {
+        const pdfDoc = pdfMake.createPdf(docDefinition);
+        
+        pdfDoc.getBlob((blob) => {
+          // Download the PDF
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          // Show success message
+          toast({
+            title: "Success!",
+            description: "Quotation PDF generated successfully!",
+            variant: "default",
+            className: "bg-primary text-primary-foreground border-0",
+          });
+        }, (error) => {
+          console.error('Error generating PDF:', error);
+          toast({
+            title: "Error",
+            description: "Failed to generate the PDF. Please try again.",
+            variant: "destructive",
+          });
+        });
+      } catch (error) {
+        console.error('Error creating PDF:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create the PDF. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error in generatePDF:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
             layout: 'noBorders',
             table: {
               widths: ['*'],
@@ -1101,334 +1551,63 @@ export const QuoteCalculator: React.FC = () => {
               }]]
             },
             margin: [0, 0, 0, 20]
-          },
-    // Header - Royal Blue container with white text
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(24);
-    doc.text('Glit Publisher Quote', pageWidth / 2, headerHeight/2 - 2, { align: 'center' });
-    
-    // Quote ID and Date
-    doc.setFontSize(10);
-    const currentDate = new Date().toLocaleDateString('en-GB', { 
-      day: '2-digit', 
-      month: 'numeric', 
-      year: 'numeric' 
-    });
-    const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
-    doc.text(`Quotation ID: ${quotationId}`, margin.left + padding.large, headerHeight - padding.large);
-    doc.text(`Date: ${currentDate}`, pageWidth - margin.right - padding.large, headerHeight - padding.large, { align: 'right' });
-    
-    // Reset text color for rest of document
-    doc.setTextColor(0, 0, 0);
-    yPosition = headerHeight + padding.large * 2;
-
-    // Customer & Staff Info sections
-    const hasCustomerInfo = quote.customerName || quote.customerEmail || quote.customerPhone;
-    const hasStaffInfo = quote.staffName || quote.staffId;
-
-    if (hasCustomerInfo || hasStaffInfo) {
-      // Background container
-      const containerHeight = hasCustomerInfo && hasStaffInfo ? 70 : 45;
-      
-      // Draw filled and stroked rectangle
-      doc.setDrawColor(226, 232, 240);
-      doc.setFillColor(248, 250, 252);
-      doc.setLineWidth(0.5);
-      
-      // Draw rectangle path
-      doc.lines(
-        [
-          [contentWidth, 0], // right
-          [0, containerHeight], // down
-          [-contentWidth, 0], // left
-          [0, -containerHeight], // up
+          }
         ],
-        margin.left,
-        yPosition - 5,
-        [1, 1],
-        'FD'
-      );
+        defaultStyle: {
+          fontSize: 10,
+          color: '#4a5568'
+        }
+      };
 
-      if (hasCustomerInfo) {
-        // Customer Details
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.text('Customer Information', margin.left + padding.medium, yPosition + 5);
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        let detailY = yPosition + 15;
-        
-        if (quote.customerName) {
-          doc.text(`Name: ${quote.customerName}`, margin.left + padding.medium, detailY);
-          detailY += padding.large;
-        }
-        if (quote.customerPhone) {
-          doc.text(`Phone: ${quote.customerPhone}`, margin.left + padding.medium, detailY);
-          detailY += padding.large;
-        }
-        if (quote.customerEmail) {
-          doc.text(`Email: ${quote.customerEmail}`, margin.left + padding.medium, detailY);
-          detailY += padding.large;
-        }
-        
-        yPosition = detailY + padding.medium;
-      }
-
-      if (hasStaffInfo) {
-        // Staff Details
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        const staffX = hasCustomerInfo ? pageWidth / 2 + padding.medium : margin.left + padding.medium;
-        doc.text('Prepared By', staffX, hasCustomerInfo ? yPosition - 25 : yPosition + 5);
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        let staffY = hasCustomerInfo ? yPosition - 15 : yPosition + 15;
-        
-        if (quote.staffName) {
-          doc.text(`Staff Name: ${quote.staffName}`, staffX, staffY);
-          staffY += padding.large;
-        }
-        if (quote.staffId) {
-          doc.text(`Staff ID: ${quote.staffId}`, staffX, staffY);
-          staffY += padding.large;
-        }
-      }
+      // Generate PDF
+      const fileName = `GLITE_QUOTE_${quotationId}.pdf`;
       
-      yPosition += hasCustomerInfo && hasStaffInfo ? 15 : 45;
-    }
-
-    // Book Specifications Section
-    yPosition += sectionSpacing;
-    
-    // Draw filled and stroked rectangle
-    doc.setDrawColor(226, 232, 240);
-    doc.setFillColor(248, 250, 252);
-    doc.setLineWidth(0.5);
-    
-    // Draw rectangle path
-    doc.lines(
-      [
-        [contentWidth, 0], // right
-        [0, 90], // down
-        [-contentWidth, 0], // left
-        [0, -90], // up
-      ],
-      margin.left,
-      yPosition - padding.small,
-      [1, 1],
-      'FD'
-    );
-
-    // Section Header
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Book Specifications', margin.left + padding.medium, yPosition + padding.large);
-    yPosition += padding.large * 2;
-
-    // Specifications
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    
-    const specs = [
-      ['Book Size:', quote.bookSize],
-      ['Cover Type:', quote.coverType],
-      ['Page Count:', quote.pageCount.toString()],
-      ['Copies:', quote.copies.toString()],
-      ['Total Pages:', (quote.pageCount * quote.copies).toLocaleString()],
-      ['Paper Type:', quote.paperType],
-      ['Interior Type:', quote.interiorType]
-    ];
-
-    const labelOffset = margin.left + padding.medium;
-    const valueOffset = margin.left + padding.large * 2;
-
-    specs.forEach(([label, value]) => {
-      doc.setFont('helvetica', 'bold');
-      doc.text(label, labelOffset, yPosition);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value || '', valueOffset, yPosition);
-      yPosition += padding.large;
-    });
-
-    // Printing Cost Total - Royal Blue strip
-    yPosition += padding.medium;
-    doc.setFillColor(37, 99, 235);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    const printingTotal = `NGN ${calculations.bookSpecsTotal.toLocaleString()}`;
-    doc.text('Printing Cost Total:', margin.left + padding.medium, yPosition + padding.medium);
-    doc.text(printingTotal, pageWidth - margin.right - padding.medium, yPosition + padding.medium, { align: 'right' });
-    
-    doc.setTextColor(0, 0, 0);
-    yPosition += padding.large * 2;
-
-    // Additional Services Section
-    const hasAdditionalServices = quote.includeDesign || quote.includeISBN || quote.others.length > 0;
-    
-    if (hasAdditionalServices) {
-      yPosition += sectionSpacing;
-      
-      // Calculate section height
-      const sectionHeaderHeight = padding.large * 2;
-      const itemHeight = padding.large;
-      const totalItems = (quote.includeDesign ? 1 : 0) + 
-                        (quote.includeISBN ? 1 : 0) + 
-                        quote.others.length;
-      const sectionHeight = sectionHeaderHeight + (totalItems * itemHeight) + padding.large * 2;
-      
-      // Container
-      doc.setFillColor(248, 250, 252);
-      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight);
-      doc.setDrawColor(226, 232, 240);
-      doc.setFillColor(248, 250, 252);
-      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight);
-
-      // Section Header
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('Additional Services', margin.left + padding.medium, yPosition + padding.large);
-      yPosition += padding.large * 2;
-
-      // Services List
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-
-      if (quote.includeDesign) {
-        doc.text('Design:', margin.left + padding.medium, yPosition);
-        doc.text(`NGN ${calculations.designCost.toLocaleString()}`, 
-                pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
-        yPosition += padding.large;
+      try {
+        const pdfDoc = pdfMake.createPdf(docDefinition);
+        
+        pdfDoc.getBlob((blob) => {
+          // Download the PDF
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          // Show success message
+          toast({
+            title: "Success!",
+            description: "Quotation PDF generated successfully!",
+            variant: "default",
+            className: "bg-primary text-primary-foreground border-0",
+          });
+        }, (error) => {
+          console.error('Error generating PDF:', error);
+          toast({
+            title: "Error",
+            description: "Failed to generate the PDF. Please try again.",
+            variant: "destructive",
+          });
+        });
+      } catch (error) {
+        console.error('Error creating PDF:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create the PDF. Please try again.",
+          variant: "destructive",
+        });
       }
-
-      if (quote.includeISBN) {
-        doc.text('ISBN:', margin.left + padding.medium, yPosition);
-        doc.text(`NGN ${calculations.isbnCost.toLocaleString()}`, 
-                pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
-        yPosition += padding.large;
-      }
-
-      quote.others.forEach(item => {
-        if (item.description && item.cost > 0) {
-          doc.text(`Others: ${item.description}`, margin.left + padding.medium, yPosition);
-          doc.text(`NGN ${item.cost.toLocaleString()}`, 
-                  pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
-          yPosition += padding.large;
-        }
-      });
-
-      // Additional Services Total
-      yPosition += 7;
-      doc.setFillColor(37, 99, 235);
-      doc.rect(margin, yPosition - 3, pageWidth - (margin * 2), 12, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Additional Services Total:', margin + 5, yPosition + 5);
-      doc.text(`NGN ${calculations.additionalServicesTotal.toLocaleString()}`, 
-              pageWidth - margin - 5, yPosition + 5, { align: 'right' });
-      
-      doc.setTextColor(0, 0, 0);
-      yPosition += 20;
-    }
-
-    // Bulk Discount (if applied)
-    if (bulkDiscount.apply && bulkDiscount.amount > 0) {
-      yPosition += padding.medium;
-      doc.setTextColor(220, 38, 38); // Red color
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('Bulk Discount:', margin.left + padding.medium, yPosition);
-      doc.text(`-NGN ${bulkDiscount.amount.toLocaleString()}`, 
-              pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
-      yPosition += padding.large * 1.5;
-      doc.setTextColor(0, 0, 0);
-    }
-
-    // Final Quotation
-    yPosition += padding.large;
-    
-    // Draw filled rectangle
-    doc.setDrawColor(37, 99, 235);
-    doc.setFillColor(37, 99, 235);
-    doc.setLineWidth(0);
-    
-    const finalHeight = padding.large * 2.5;
-    // Draw rectangle path
-    doc.lines(
-      [
-        [contentWidth, 0], // right
-        [0, finalHeight], // down
-        [-contentWidth, 0], // left
-        [0, -finalHeight], // up
-      ],
-      margin.left,
-      yPosition - padding.small,
-      [1, 1],
-      'F'
-    );
-    
-    // Text
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('Final Quotation:', margin.left + padding.medium, yPosition + padding.large);
-    doc.setFontSize(18);
-    doc.text(`NGN ${calculations.finalQuotation.toLocaleString()}`, 
-            pageWidth - margin.right - padding.medium, yPosition + padding.large, { align: 'right' });
-
-    // Footer
-    yPosition = pageHeight - margin.bottom - (padding.large * 6);
-    
-    // Separator line
-    doc.setDrawColor(37, 99, 235);
-    doc.setLineWidth(0.5);
-    doc.line(margin.left, yPosition, pageWidth - margin.right, yPosition);
-    
-    // Contact Details
-    yPosition += padding.large;
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    const contactCenter = pageWidth / 2;
-    
-    doc.text('08026978666', contactCenter, yPosition, { align: 'center' });
-    yPosition += padding.medium;
-    doc.text('09026557129', contactCenter, yPosition, { align: 'center' });
-    yPosition += padding.medium;
-    doc.text('glitworkspaces@gmail.com', contactCenter, yPosition, { align: 'center' });
-    
-    // Validity Text
-    yPosition += padding.large;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Thank you for choosing Glit Publishers. This quotation is valid for 30 days.', 
-            contactCenter, yPosition, { align: 'center' });
-
-    // Save the PDF
-      console.log('Preparing to save PDF...');
-      const fileName = `Glit-Quote-${quotationId.replace(/\s+/g, '-')}.pdf`;
-      doc.save(fileName);
-      console.log('PDF saved as:', fileName);
-
-      // Show success toast
-      toast({
-        title: "Success!",
-        description: "Quotation PDF downloaded successfully!",
-        variant: "default",
-        className: "bg-primary text-primary-foreground border-0",
-      });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Error in generatePDF:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    }
+
     }
   };
 
