@@ -378,18 +378,35 @@ export const QuoteCalculator: React.FC = () => {
   const generatePDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
-    const margin = 20;
-    let yPosition = 25;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Layout Constants
+    const margin = {
+      left: 25,
+      right: 25,
+      top: 25,
+      bottom: 25
+    };
+    const padding = {
+      small: 6,
+      medium: 10,
+      large: 16
+    };
+    const sectionSpacing = 25;
+    const contentWidth = pageWidth - margin.left - margin.right;
+    
+    let yPosition = margin.top;
 
     // Header - Royal Blue container with white text
+    const headerHeight = 50;
     doc.setFillColor(37, 99, 235); // Royal Blue
-    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.rect(0, 0, pageWidth, headerHeight, 'F');
     
     // Title
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(24);
-    doc.text('Glit Publisher Quote', pageWidth / 2, 20, { align: 'center' });
+    doc.text('Glit Publisher Quote', pageWidth / 2, headerHeight/2 - 2, { align: 'center' });
     
     // Quote ID and Date
     doc.setFontSize(10);
@@ -399,12 +416,12 @@ export const QuoteCalculator: React.FC = () => {
       year: 'numeric' 
     });
     const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
-    doc.text(`Quotation ID: ${quotationId}`, margin, 35);
-    doc.text(`Date: ${currentDate}`, pageWidth - margin, 35, { align: 'right' });
+    doc.text(`Quotation ID: ${quotationId}`, margin.left + padding.large, headerHeight - padding.large);
+    doc.text(`Date: ${currentDate}`, pageWidth - margin.right - padding.large, headerHeight - padding.large, { align: 'right' });
     
     // Reset text color for rest of document
     doc.setTextColor(0, 0, 0);
-    yPosition = 60;
+    yPosition = headerHeight + padding.large * 2;
 
     // Customer & Staff Info sections
     const hasCustomerInfo = quote.customerName || quote.customerEmail || quote.customerPhone;
@@ -413,56 +430,54 @@ export const QuoteCalculator: React.FC = () => {
     if (hasCustomerInfo || hasStaffInfo) {
       // Background container
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin, yPosition - 5, pageWidth - (margin * 2), hasCustomerInfo && hasStaffInfo ? 70 : 45, 'F');
+      doc.rect(margin.left, yPosition - 5, pageWidth - (margin.left + margin.right), hasCustomerInfo && hasStaffInfo ? 70 : 45, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.rect(margin, yPosition - 5, pageWidth - (margin * 2), hasCustomerInfo && hasStaffInfo ? 70 : 45, 'S');
+      doc.rect(margin.left, yPosition - 5, pageWidth - (margin.left + margin.right), hasCustomerInfo && hasStaffInfo ? 70 : 45, 'S');
 
       if (hasCustomerInfo) {
         // Customer Details
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
-        doc.text('Customer Information', margin + 5, yPosition + 5);
+        doc.text('Customer Information', margin.left + padding.medium, yPosition + 5);
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         let detailY = yPosition + 15;
         
         if (quote.customerName) {
-          doc.text(`Name: ${quote.customerName}`, margin + 5, detailY);
-          detailY += 6;
+          doc.text(`Name: ${quote.customerName}`, margin.left + padding.medium, detailY);
+          detailY += padding.large;
         }
         if (quote.customerPhone) {
-          doc.text(`Phone: ${quote.customerPhone}`, margin + 5, detailY);
-          detailY += 6;
+          doc.text(`Phone: ${quote.customerPhone}`, margin.left + padding.medium, detailY);
+          detailY += padding.large;
         }
         if (quote.customerEmail) {
-          doc.text(`Email: ${quote.customerEmail}`, margin + 5, detailY);
-          detailY += 6;
+          doc.text(`Email: ${quote.customerEmail}`, margin.left + padding.medium, detailY);
+          detailY += padding.large;
         }
         
-        yPosition = detailY + 5;
+        yPosition = detailY + padding.medium;
       }
 
       if (hasStaffInfo) {
         // Staff Details
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
-        doc.text('Prepared By', hasCustomerInfo ? pageWidth / 2 + 5 : margin + 5, 
-                 hasCustomerInfo ? yPosition - 25 : yPosition + 5);
+        const staffX = hasCustomerInfo ? pageWidth / 2 + padding.medium : margin.left + padding.medium;
+        doc.text('Prepared By', staffX, hasCustomerInfo ? yPosition - 25 : yPosition + 5);
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         let staffY = hasCustomerInfo ? yPosition - 15 : yPosition + 15;
         
         if (quote.staffName) {
-          doc.text(`Staff Name: ${quote.staffName}`, 
-                   hasCustomerInfo ? pageWidth / 2 + 5 : margin + 5, staffY);
-          staffY += 6;
+          doc.text(`Staff Name: ${quote.staffName}`, staffX, staffY);
+          staffY += padding.large;
         }
         if (quote.staffId) {
-          doc.text(`Staff ID: ${quote.staffId}`, 
-                   hasCustomerInfo ? pageWidth / 2 + 5 : margin + 5, staffY);
-          staffY += 6;
+          doc.text(`Staff ID: ${quote.staffId}`, staffX, staffY);
+          staffY += padding.large;
         }
       }
       
@@ -470,17 +485,17 @@ export const QuoteCalculator: React.FC = () => {
     }
 
     // Book Specifications Section
-    yPosition += 10;
+    yPosition += sectionSpacing;
     doc.setFillColor(248, 250, 252);
-    doc.rect(margin, yPosition - 3, pageWidth - (margin * 2), 90, 'F');
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90, 'F');
     doc.setDrawColor(226, 232, 240);
-    doc.rect(margin, yPosition - 3, pageWidth - (margin * 2), 90, 'S');
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90, 'S');
 
     // Section Header
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('Book Specifications', margin + 5, yPosition + 8);
-    yPosition += 20;
+    doc.text('Book Specifications', margin.left + padding.medium, yPosition + padding.large);
+    yPosition += padding.large * 2;
 
     // Specifications
     doc.setFont('helvetica', 'normal');
@@ -496,91 +511,81 @@ export const QuoteCalculator: React.FC = () => {
       ['Interior Type:', quote.interiorType]
     ];
 
+    const labelOffset = margin.left + padding.medium;
+    const valueOffset = margin.left + padding.large * 2;
+
     specs.forEach(([label, value]) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(label, margin + 5, yPosition);
+      doc.text(label, labelOffset, yPosition);
       doc.setFont('helvetica', 'normal');
-      doc.text(value || '', margin + 35, yPosition);
-      yPosition += 8;
+      doc.text(value || '', valueOffset, yPosition);
+      yPosition += padding.large;
     });
 
     // Printing Cost Total - Royal Blue strip
-    yPosition += 5;
+    yPosition += padding.medium;
     doc.setFillColor(37, 99, 235);
-    doc.rect(margin, yPosition - 3, pageWidth - (margin * 2), 12, 'F');
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     const printingTotal = `NGN ${calculations.bookSpecsTotal.toLocaleString()}`;
-    doc.text('Printing Cost Total:', margin + 5, yPosition + 5);
-    doc.text(printingTotal, pageWidth - margin - 5, yPosition + 5, { align: 'right' });
+    doc.text('Printing Cost Total:', margin.left + padding.medium, yPosition + padding.medium);
+    doc.text(printingTotal, pageWidth - margin.right - padding.medium, yPosition + padding.medium, { align: 'right' });
     
     doc.setTextColor(0, 0, 0);
-    yPosition += 20;
-
-    // Paper & Interior Section with border and shadow
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-    doc.rect(15, yPosition - 3, pageWidth - 30, 25, 'S');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Specifications', 20, yPosition + 8);
-    yPosition += 15;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(`Paper Type: ${quote.paperType}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Interior Type: ${quote.interiorType}`, 20, yPosition);
-    yPosition += 15;
+    yPosition += padding.large * 2;
 
     // Additional Services Section
     const hasAdditionalServices = quote.includeDesign || quote.includeISBN || quote.others.length > 0;
     
     if (hasAdditionalServices) {
-      yPosition += 20;
+      yPosition += sectionSpacing;
+      
+      // Calculate section height
+      const sectionHeaderHeight = padding.large * 2;
+      const itemHeight = padding.large;
+      const totalItems = (quote.includeDesign ? 1 : 0) + 
+                        (quote.includeISBN ? 1 : 0) + 
+                        quote.others.length;
+      const sectionHeight = sectionHeaderHeight + (totalItems * itemHeight) + padding.large * 2;
       
       // Container
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin, yPosition - 3, pageWidth - (margin * 2), 
-              20 + (quote.includeDesign ? 8 : 0) + (quote.includeISBN ? 8 : 0) + 
-              (quote.others.length * 8) + 15, 'F');
+      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.rect(margin, yPosition - 3, pageWidth - (margin * 2), 
-              20 + (quote.includeDesign ? 8 : 0) + (quote.includeISBN ? 8 : 0) + 
-              (quote.others.length * 8) + 15, 'S');
+      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight, 'S');
 
       // Section Header
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
-      doc.text('Additional Services', margin + 5, yPosition + 8);
-      yPosition += 20;
+      doc.text('Additional Services', margin.left + padding.medium, yPosition + padding.large);
+      yPosition += padding.large * 2;
 
       // Services List
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
 
       if (quote.includeDesign) {
-        doc.text('Design:', margin + 5, yPosition);
+        doc.text('Design:', margin.left + padding.medium, yPosition);
         doc.text(`NGN ${calculations.designCost.toLocaleString()}`, 
-                pageWidth - margin - 5, yPosition, { align: 'right' });
-        yPosition += 8;
+                pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
+        yPosition += padding.large;
       }
 
       if (quote.includeISBN) {
-        doc.text('ISBN:', margin + 5, yPosition);
+        doc.text('ISBN:', margin.left + padding.medium, yPosition);
         doc.text(`NGN ${calculations.isbnCost.toLocaleString()}`, 
-                pageWidth - margin - 5, yPosition, { align: 'right' });
-        yPosition += 8;
+                pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
+        yPosition += padding.large;
       }
 
       quote.others.forEach(item => {
         if (item.description && item.cost > 0) {
-          doc.text(`Others: ${item.description}`, margin + 5, yPosition);
+          doc.text(`Others: ${item.description}`, margin.left + padding.medium, yPosition);
           doc.text(`NGN ${item.cost.toLocaleString()}`, 
-                  pageWidth - margin - 5, yPosition, { align: 'right' });
-          yPosition += 8;
+                  pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
+          yPosition += padding.large;
         }
       });
 
@@ -600,55 +605,55 @@ export const QuoteCalculator: React.FC = () => {
 
     // Bulk Discount (if applied)
     if (bulkDiscount.apply && bulkDiscount.amount > 0) {
-      yPosition += 5;
+      yPosition += padding.medium;
       doc.setTextColor(220, 38, 38); // Red color
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
-      doc.text('Bulk Discount:', margin + 5, yPosition);
+      doc.text('Bulk Discount:', margin.left + padding.medium, yPosition);
       doc.text(`-NGN ${bulkDiscount.amount.toLocaleString()}`, 
-              pageWidth - margin - 5, yPosition, { align: 'right' });
-      yPosition += 15;
+              pageWidth - margin.right - padding.medium, yPosition, { align: 'right' });
+      yPosition += padding.large * 1.5;
       doc.setTextColor(0, 0, 0);
     }
 
     // Final Quotation
-    yPosition += 10;
+    yPosition += padding.large;
     // Container
     doc.setFillColor(37, 99, 235);
-    doc.rect(margin, yPosition - 5, pageWidth - (margin * 2), 25, 'F');
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2.5, 'F');
     
     // Text
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text('Final Quotation:', margin + 5, yPosition + 8);
+    doc.text('Final Quotation:', margin.left + padding.medium, yPosition + padding.large);
     doc.setFontSize(18);
     doc.text(`NGN ${calculations.finalQuotation.toLocaleString()}`, 
-            pageWidth - margin - 5, yPosition + 8, { align: 'right' });
+            pageWidth - margin.right - padding.medium, yPosition + padding.large, { align: 'right' });
 
     // Footer
-    yPosition += 45;
+    yPosition = pageHeight - margin.bottom - (padding.large * 6);
     
     // Separator line
     doc.setDrawColor(37, 99, 235);
     doc.setLineWidth(0.5);
-    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    doc.line(margin.left, yPosition, pageWidth - margin.right, yPosition);
     
     // Contact Details
-    yPosition += 15;
+    yPosition += padding.large;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     const contactCenter = pageWidth / 2;
     
     doc.text('08026978666', contactCenter, yPosition, { align: 'center' });
-    yPosition += 5;
+    yPosition += padding.medium;
     doc.text('09026557129', contactCenter, yPosition, { align: 'center' });
-    yPosition += 5;
+    yPosition += padding.medium;
     doc.text('glitworkspaces@gmail.com', contactCenter, yPosition, { align: 'center' });
     
     // Validity Text
-    yPosition += 15;
+    yPosition += padding.large;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
