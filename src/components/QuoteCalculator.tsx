@@ -419,10 +419,29 @@ export const QuoteCalculator: React.FC = () => {
 
     // Header - Royal Blue container with white text
     const headerHeight = 50;
+    
+    // Draw filled rectangle for header
+    doc.setDrawColor(37, 99, 235); // Royal Blue
     doc.setFillColor(37, 99, 235); // Royal Blue
-    doc.rect(0, 0, pageWidth, headerHeight);
-    doc.setFillColor(37, 99, 235); // Royal Blue
-    doc.rect(0, 0, pageWidth, headerHeight);
+    doc.setLineWidth(0);
+    const headerX = 0;
+    const headerY = 0;
+    const headerW = pageWidth;
+    const headerH = headerHeight;
+    
+    // Draw rectangle path
+    doc.lines(
+      [
+        [headerW, 0], // right
+        [0, headerH], // down
+        [-headerW, 0], // left
+        [0, -headerH], // up
+      ],
+      headerX,
+      headerY,
+      [1, 1],
+      'F'
+    );
     
     // Title
     doc.setTextColor(255, 255, 255);
@@ -451,11 +470,26 @@ export const QuoteCalculator: React.FC = () => {
 
     if (hasCustomerInfo || hasStaffInfo) {
       // Background container
-      doc.setFillColor(248, 250, 252);
-      doc.rect(margin.left, yPosition - 5, contentWidth, hasCustomerInfo && hasStaffInfo ? 70 : 45);
+      const containerHeight = hasCustomerInfo && hasStaffInfo ? 70 : 45;
+      
+      // Draw filled and stroked rectangle
       doc.setDrawColor(226, 232, 240);
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin.left, yPosition - 5, contentWidth, hasCustomerInfo && hasStaffInfo ? 70 : 45);
+      doc.setLineWidth(0.5);
+      
+      // Draw rectangle path
+      doc.lines(
+        [
+          [contentWidth, 0], // right
+          [0, containerHeight], // down
+          [-contentWidth, 0], // left
+          [0, -containerHeight], // up
+        ],
+        margin.left,
+        yPosition - 5,
+        [1, 1],
+        'FD'
+      );
 
       if (hasCustomerInfo) {
         // Customer Details
@@ -509,11 +543,25 @@ export const QuoteCalculator: React.FC = () => {
 
     // Book Specifications Section
     yPosition += sectionSpacing;
-    doc.setFillColor(248, 250, 252);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90);
+    
+    // Draw filled and stroked rectangle
     doc.setDrawColor(226, 232, 240);
     doc.setFillColor(248, 250, 252);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90);
+    doc.setLineWidth(0.5);
+    
+    // Draw rectangle path
+    doc.lines(
+      [
+        [contentWidth, 0], // right
+        [0, 90], // down
+        [-contentWidth, 0], // left
+        [0, -90], // up
+      ],
+      margin.left,
+      yPosition - padding.small,
+      [1, 1],
+      'FD'
+    );
 
     // Section Header
     doc.setFont('helvetica', 'bold');
@@ -643,11 +691,26 @@ export const QuoteCalculator: React.FC = () => {
 
     // Final Quotation
     yPosition += padding.large;
-    // Container
+    
+    // Draw filled rectangle
+    doc.setDrawColor(37, 99, 235);
     doc.setFillColor(37, 99, 235);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2.5);
-    doc.setFillColor(37, 99, 235);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2.5);
+    doc.setLineWidth(0);
+    
+    const finalHeight = padding.large * 2.5;
+    // Draw rectangle path
+    doc.lines(
+      [
+        [contentWidth, 0], // right
+        [0, finalHeight], // down
+        [-contentWidth, 0], // left
+        [0, -finalHeight], // up
+      ],
+      margin.left,
+      yPosition - padding.small,
+      [1, 1],
+      'F'
+    );
     
     // Text
     doc.setTextColor(255, 255, 255);
