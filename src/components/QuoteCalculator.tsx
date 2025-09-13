@@ -30,8 +30,10 @@ import {
   Receipt,
   Wallet,
   User,
-  UserCircle
+  UserCircle,
+  Shield
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 
 type BookSize = 'A6' | 'A5' | '6x9' | '7x10' | 'A4' | 'A3';
@@ -499,7 +501,7 @@ export const QuoteCalculator: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-primary-light p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-primary-light p-4 relative">
       <Toaster />
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
@@ -1087,6 +1089,15 @@ export const QuoteCalculator: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Admin Link */}
+      <Link
+        to="/admin/login"
+        className="fixed bottom-4 right-4 p-2 text-muted-foreground/40 hover:text-primary transition-colors"
+        title="Admin Access"
+      >
+        <Shield className="w-5 h-5" />
+      </Link>
     </div>
   );
 };
