@@ -632,7 +632,17 @@ export const QuoteCalculator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-primary-light p-4 relative">
       <Toaster />
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative">
+        {/* Admin Link */}
+        <Link
+          to="/admin/login"
+          className="absolute top-0 right-0 p-2 flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium"
+          title="Admin Access"
+        >
+          <Shield className="w-5 h-5" />
+          <span>Admin</span>
+        </Link>
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-2">Glit Quote</h1>
           <p className="text-muted-foreground text-lg">Internal Staff Quotation Calculator</p>
@@ -1218,15 +1228,6 @@ export const QuoteCalculator: React.FC = () => {
           </Card>
         </div>
       </div>
-
-      {/* Admin Link */}
-      <Link
-        to="/admin/login"
-        className="fixed bottom-4 right-4 p-2 text-muted-foreground/40 hover:text-primary transition-colors"
-        title="Admin Access"
-      >
-        <Shield className="w-5 h-5" />
-      </Link>
     </div>
   );
 };
