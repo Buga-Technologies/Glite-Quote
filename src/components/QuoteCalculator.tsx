@@ -1,6 +1,7 @@
 /** @jsxImportSource react */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
@@ -396,8 +397,277 @@ export const QuoteCalculator: React.FC = () => {
       const quotationId = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
       const currentDate = new Date().toLocaleDateString('en-GB');
       
-      // Create document definition
-      const docDefinition = {
+      // Document content definition
+      const docDefinition: TDocumentDefinitions = {
+        pageSize: 'A4',
+        pageMargins: [40, 60, 40, 60],
+        footer: {
+          columns: [
+            { text: 'GLITE PRINTS', alignment: 'center', margin: [0, 20] }
+          ]
+        },
+        content: [
+          // Header
+          {
+            columns: [
+              {
+                width: '*',
+                stack: [
+                  { text: 'GLITE PRINTS', style: 'companyName' },
+                  { text: 'Your Ultimate Printing Partner', style: 'companyTagline' },
+                  { text: '08026978666 | 09026557129', style: 'companyContact' },
+                  { text: 'glitworkspaces@gmail.com', style: 'companyContact' }
+                ]
+              },
+              {
+                width: 'auto',
+                stack: [
+                  { text: `QUOTATION #: ${quotationId}`, style: 'quoteNumber' },
+                  { text: `Date: ${currentDate}`, style: 'quoteDate' }
+                ]
+              }
+            ]
+          },
+          { text: '', margin: [0, 20] },
+          
+          // Customer Information
+          {
+            style: 'section',
+            table: {
+              widths: ['30%', '*'],
+              headerRows: 1,
+              body: [
+                [{ text: 'CUSTOMER DETAILS', style: 'sectionHeader', colSpan: 2 }, {}],
+                ['Name:', { text: quote.customerName || 'N/A' }],
+                ['Company:', { text: quote.customerCompany || 'N/A' }],
+                ['Email:', { text: quote.customerEmail || 'N/A' }],
+                ['Phone:', { text: quote.customerPhone || 'N/A' }]
+              ]
+            }
+          },
+          { text: '', margin: [0, 20] },
+          
+          // Book Specifications
+          {
+            style: 'section',
+            table: {
+              widths: ['30%', '*'],
+              headerRows: 1,
+              body: [
+                [{ text: 'BOOK SPECIFICATIONS', style: 'sectionHeader', colSpan: 2 }, {}],
+                ['Book Size:', { text: quote.bookSize }],
+                ['Paper Type:', { text: quote.paperType }],
+                ['Interior Type:', { text: quote.interiorType }],
+                ['Page Count:', { text: quote.pageCount.toString() }],
+                ['Number of Copies:', { text: quote.copies.toString() }],
+                ['Cover Type:', { text: quote.coverType }],
+                ['Total Pages:', { text: (quote.pageCount * quote.copies).toLocaleString() }]
+              ]
+            }
+          },
+          { text: '', margin: [0, 20] },
+          
+          // Cost Breakdown
+          {
+            style: 'section',
+            table: {
+              widths: ['*', 'auto'],
+              headerRows: 1,
+              body: [
+                [{ text: 'COST BREAKDOWN', style: 'sectionHeader', colSpan: 2 }, {}],
+                ['Paper Cost:', { text: formatCurrency(calculations.paperCost) }],
+                ['Toner Cost:', { text: formatCurrency(calculations.tonerCost) }],
+                ['Cover Cost:', { text: formatCurrency(calculations.coverCost) }],
+                ['Finishing Cost:', { text: formatCurrency(calculations.finishingCost) }],
+                ['Packaging Cost:', { text: formatCurrency(calculations.packagingCost) }],
+                ...(quote.includeDesign ? [['Design Service:', { text: formatCurrency(calculations.designCost) }]] : []),
+                ...(quote.includeISBN ? [['ISBN Registration:', { text: formatCurrency(calculations.isbnCost) }]] : []),
+                ...(quote.includeBHR ? [['Binding & Handling:', { text: formatCurrency(calculations.bhrCost) }]] : []),
+                ...quote.others.map(item => [item.description + ':', { text: formatCurrency(item.cost) }]),
+                [{ text: 'Subtotal:', style: 'subtotalLabel' }, { text: formatCurrency(calculations.rawCost), style: 'subtotalValue' }],
+                [{ text: 'Profit Margin:', style: 'subtotalLabel' }, { text: `${quote.profitMargin}%`, style: 'subtotalValue' }],
+                ...(bulkDiscount.apply ? [[{ text: 'Bulk Discount:', style: 'discountLabel' }, { text: `- ${formatCurrency(bulkDiscount.amount)}`, style: 'discountValue' }]] : []),
+                [{ text: 'FINAL QUOTATION:', style: 'grandTotalLabel' }, { text: formatCurrency(calculations.finalQuotation), style: 'grandTotalValue' }]
+              ]
+            }
+          },
+          { text: '', margin: [0, 20] },
+          
+          // Terms & Conditions
+          {
+            style: 'section',
+            stack: [
+              { text: 'Terms & Conditions', style: 'termsHeader' },
+              { 
+                ul: [
+                  'This quotation is valid for 7 days from the date issued.',
+                  '50% advance payment is required to commence production.',
+                  'Production time varies based on specifications and quantity.',
+                  'Prices are subject to change without prior notice.'
+                ],
+                style: 'termsList'
+              }
+            ]
+          },
+          
+          // Signature Section
+          {
+            columns: [
+              {
+                width: '*',
+                text: ''
+              },
+              {
+                width: 'auto',
+                stack: [
+                  { text: '\n\n__________________________', style: 'signature' },
+                  { text: 'Authorized Signature', style: 'signatureLabel' }
+                ],
+                alignment: 'center'
+              },
+              {
+                width: '*',
+                text: ''
+              }
+            ],
+            margin: [0, 40, 0, 0]
+          }
+        ],
+        defaultStyle: {
+          font: 'Helvetica'
+        },
+        styles: {
+          companyName: {
+            fontSize: 24,
+            bold: true,
+            color: '#1a365d'
+          },
+          companyTagline: {
+            fontSize: 12,
+            color: '#4a5568',
+            margin: [0, 0, 0, 8]
+          },
+          companyContact: {
+            fontSize: 10,
+            color: '#4a5568'
+          },
+          quoteNumber: {
+            fontSize: 12,
+            bold: true,
+            margin: [0, 0, 0, 4]
+          },
+          quoteDate: {
+            fontSize: 10
+          },
+          sectionHeader: {
+            fontSize: 14,
+            bold: true,
+            color: '#2d3748',
+            fillColor: '#edf2f7',
+            margin: [0, 4, 0, 4]
+          },
+          section: {
+            margin: [0, 10]
+          },
+          subtotalLabel: {
+            fontSize: 11,
+            bold: true
+          },
+          subtotalValue: {
+            fontSize: 11,
+            bold: true,
+            alignment: 'right'
+          },
+          discountLabel: {
+            fontSize: 11,
+            bold: true,
+            color: '#2f855a'
+          },
+          discountValue: {
+            fontSize: 11,
+            bold: true,
+            color: '#2f855a',
+            alignment: 'right'
+          },
+          grandTotalLabel: {
+            fontSize: 14,
+            bold: true,
+            color: '#1a365d'
+          },
+          grandTotalValue: {
+            fontSize: 14,
+            bold: true,
+            color: '#1a365d',
+            alignment: 'right'
+          },
+          termsHeader: {
+            fontSize: 12,
+            bold: true,
+            margin: [0, 0, 0, 8]
+          },
+          termsList: {
+            fontSize: 10,
+            color: '#4a5568'
+          },
+          signature: {
+            margin: [0, 40, 0, 4]
+          },
+          signatureLabel: {
+            fontSize: 10,
+            color: '#4a5568'
+          }
+        }}
+        ],
+        styles: {
+          headerTitle: {
+            fontSize: 24,
+            bold: true,
+            color: '#1a365d'
+          },
+          headerSubtitle: {
+            fontSize: 12,
+            color: '#4a5568',
+            margin: [0, 5, 0, 0]
+          },
+          quotationDetails: {
+            fontSize: 10,
+            margin: [0, 2]
+          },
+          sectionHeader: {
+            fontSize: 14,
+            bold: true,
+            color: '#2d3748',
+            fillColor: '#edf2f7',
+            margin: [0, 5]
+          },
+          section: {
+            margin: [0, 10]
+          },
+          subtotal: {
+            bold: true,
+            fontSize: 11
+          },
+          discount: {
+            color: '#2f855a',
+            bold: true,
+            fontSize: 11
+          },
+          total: {
+            bold: true,
+            fontSize: 14,
+            color: '#1a365d'
+          },
+          termsHeader: {
+            fontSize: 12,
+            bold: true,
+            margin: [0, 0, 0, 5]
+          }
+        },
+        defaultStyle: {
+          fontSize: 10,
+          color: '#4a5568'
+        }
+      };
         pageSize: 'A4',
         pageMargins: [25, 25, 25, 25],
         
@@ -626,22 +896,51 @@ export const QuoteCalculator: React.FC = () => {
         ]
       };
 
-      // Create and download PDF
-      const fileName = `Glit-Quote-${quotationId.replace(/\s+/g, '-')}.pdf`;
-      pdfMake.createPdf(docDefinition).download(fileName);
-
-      // Show success toast
-      toast({
-        title: "Success!",
-        description: "Quotation PDF downloaded successfully!",
-        variant: "default",
-        className: "bg-primary text-primary-foreground border-0",
-      });
+      // Generate and download PDF
+      const fileName = `GLITE_QUOTE_${quotationId}.pdf`;
+      
+      try {
+        const pdfDoc = pdfMake.createPdf(docDefinition);
+        
+        pdfDoc.getBlob((blob) => {
+          // Download the PDF
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          // Show success message
+          toast({
+            title: "Success!",
+            description: "Quotation PDF generated successfully!",
+            variant: "default",
+            className: "bg-primary text-primary-foreground border-0",
+          });
+        }, (error) => {
+          console.error('Error generating PDF:', error);
+          toast({
+            title: "Error",
+            description: "Failed to generate the PDF. Please try again.",
+            variant: "destructive",
+          });
+        });
+      } catch (error) {
+        console.error('Error creating PDF:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create the PDF. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Error in generatePDF:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     }
