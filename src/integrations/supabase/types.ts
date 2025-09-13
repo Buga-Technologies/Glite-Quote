@@ -14,7 +14,240 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      additional_services: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          is_default: boolean | null
+          service_name: string
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          service_name: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          service_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      bhr_settings: {
+        Row: {
+          created_at: string
+          id: string
+          rate_per_hour: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rate_per_hour?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rate_per_hour?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cover_costs: {
+        Row: {
+          cost: number
+          cover_type: string
+          created_at: string
+          id: string
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          cover_type: string
+          created_at?: string
+          id?: string
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          cover_type?: string
+          created_at?: string
+          id?: string
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finishing_costs: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          page_range_max: number | null
+          page_range_min: number
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          id?: string
+          page_range_max?: number | null
+          page_range_min: number
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          page_range_max?: number | null
+          page_range_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      packaging_costs: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          id?: string
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      paper_costs: {
+        Row: {
+          cost_per_page: number
+          created_at: string
+          id: string
+          paper_type: string
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          cost_per_page: number
+          created_at?: string
+          id?: string
+          paper_type: string
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          cost_per_page?: number
+          created_at?: string
+          id?: string
+          paper_type?: string
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profit_margins: {
+        Row: {
+          copies_max: number | null
+          copies_min: number
+          created_at: string
+          id: string
+          margin_percentage_1: number
+          margin_percentage_2: number | null
+          updated_at: string
+        }
+        Insert: {
+          copies_max?: number | null
+          copies_min: number
+          created_at?: string
+          id?: string
+          margin_percentage_1: number
+          margin_percentage_2?: number | null
+          updated_at?: string
+        }
+        Update: {
+          copies_max?: number | null
+          copies_min?: number
+          created_at?: string
+          id?: string
+          margin_percentage_1?: number
+          margin_percentage_2?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      toner_costs: {
+        Row: {
+          color_type: string
+          cost_per_page: number
+          created_at: string
+          id: string
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          color_type: string
+          cost_per_page: number
+          created_at?: string
+          id?: string
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          color_type?: string
+          cost_per_page?: number
+          created_at?: string
+          id?: string
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
