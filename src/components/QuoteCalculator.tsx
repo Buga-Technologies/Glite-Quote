@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -419,7 +420,9 @@ export const QuoteCalculator: React.FC = () => {
     // Header - Royal Blue container with white text
     const headerHeight = 50;
     doc.setFillColor(37, 99, 235); // Royal Blue
-    doc.rect(0, 0, pageWidth, headerHeight, 'F');
+    doc.rect(0, 0, pageWidth, headerHeight);
+    doc.setFillColor(37, 99, 235); // Royal Blue
+    doc.rect(0, 0, pageWidth, headerHeight);
     
     // Title
     doc.setTextColor(255, 255, 255);
@@ -449,9 +452,10 @@ export const QuoteCalculator: React.FC = () => {
     if (hasCustomerInfo || hasStaffInfo) {
       // Background container
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin.left, yPosition - 5, pageWidth - (margin.left + margin.right), hasCustomerInfo && hasStaffInfo ? 70 : 45, 'F');
+      doc.rect(margin.left, yPosition - 5, contentWidth, hasCustomerInfo && hasStaffInfo ? 70 : 45);
       doc.setDrawColor(226, 232, 240);
-      doc.rect(margin.left, yPosition - 5, pageWidth - (margin.left + margin.right), hasCustomerInfo && hasStaffInfo ? 70 : 45, 'S');
+      doc.setFillColor(248, 250, 252);
+      doc.rect(margin.left, yPosition - 5, contentWidth, hasCustomerInfo && hasStaffInfo ? 70 : 45);
 
       if (hasCustomerInfo) {
         // Customer Details
@@ -506,9 +510,10 @@ export const QuoteCalculator: React.FC = () => {
     // Book Specifications Section
     yPosition += sectionSpacing;
     doc.setFillColor(248, 250, 252);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90, 'F');
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90);
     doc.setDrawColor(226, 232, 240);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90, 'S');
+    doc.setFillColor(248, 250, 252);
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, 90);
 
     // Section Header
     doc.setFont('helvetica', 'bold');
@@ -570,9 +575,10 @@ export const QuoteCalculator: React.FC = () => {
       
       // Container
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight, 'F');
+      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight);
       doc.setDrawColor(226, 232, 240);
-      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight, 'S');
+      doc.setFillColor(248, 250, 252);
+      doc.rect(margin.left, yPosition - padding.small, contentWidth, sectionHeight);
 
       // Section Header
       doc.setTextColor(0, 0, 0);
@@ -639,7 +645,9 @@ export const QuoteCalculator: React.FC = () => {
     yPosition += padding.large;
     // Container
     doc.setFillColor(37, 99, 235);
-    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2.5, 'F');
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2.5);
+    doc.setFillColor(37, 99, 235);
+    doc.rect(margin.left, yPosition - padding.small, contentWidth, padding.large * 2.5);
     
     // Text
     doc.setTextColor(255, 255, 255);
