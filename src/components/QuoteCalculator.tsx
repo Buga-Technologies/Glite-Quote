@@ -14,7 +14,8 @@ import {
   Maximize, Layers, FileText, Copy, FileStack,
   Palette, CheckSquare, Settings, PenTool, Book,
   Cpu, Percent, PlusCircle, Receipt, Wallet,
-  User, UserCircle, Shield
+  User, UserCircle2, Shield, Users, Phone, Mail,
+  Bookmark, Printer, Palette as PaletteIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import pdfMake from 'pdfmake/build/pdfmake';
@@ -91,8 +92,7 @@ interface Quote {
   includeDesign: boolean;
   includeISBN: boolean;
   includeBHR: boolean;
-  includeSpecialFinishing: boolean;
-  applyBulkDiscount: boolean;
+  applyBulkDiscount: number;
   profitMargin: number;
   others: OtherService[];
   customerName?: string;
@@ -100,6 +100,8 @@ interface Quote {
   customerPhone?: string;
   staffName?: string;
   staffId?: string;
+  bhrHours?: number;
+  finishingCostOverride?: number;
 }
 
 interface Calculations {
@@ -112,9 +114,8 @@ interface Calculations {
   designCost: number;
   isbnCost: number;
   othersCost: number;
-  bookSpecsTotal: number;
-  additionalServicesTotal: number;
   rawCost: number;
+  profitAmount: number;
   finalQuotation: number;
 }
 
@@ -142,15 +143,16 @@ export const QuoteCalculator: React.FC = () => {
     includeDesign: false,
     includeISBN: false,
     includeBHR: false,
-    includeSpecialFinishing: false,
-    applyBulkDiscount: false,
+    applyBulkDiscount: 0,
     profitMargin: 100,
     others: [],
     customerName: '',
     customerEmail: '',
     customerPhone: '',
     staffName: '',
-    staffId: ''
+    staffId: '',
+    bhrHours: 0,
+    finishingCostOverride: undefined
   });
 
   // New other service form
@@ -187,6 +189,11 @@ export const QuoteCalculator: React.FC = () => {
       if (profitRes.data) setProfitMargins(profitRes.data);
     } catch (error) {
       console.error('Error loading costs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load pricing data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -204,16 +211,17 @@ export const QuoteCalculator: React.FC = () => {
       c.cover_type === quote.coverType && c.size === quote.bookSize
     )?.cost || 0;
 
-    const finishingCost = finishingCosts.find(f => 
+    const defaultFinishingCost = finishingCosts.find(f => 
       quote.pageCount >= f.page_range_min && 
       (f.page_range_max === null || quote.pageCount <= f.page_range_max)
     )?.cost || 0;
 
+    const finishingCost = quote.finishingCostOverride !== undefined ? quote.finishingCostOverride : defaultFinishingCost;
+
     const packagingCost = packagingCosts.find(p => p.size === quote.bookSize)?.cost || 0;
 
     const bhrRate = bhrSettings[0]?.rate_per_hour || 3000;
-    const factor = quote.bookSize === 'A6' ? 5 : quote.bookSize === 'A5' ? 10 : 20;
-    const bhrCost = quote.includeBHR ? (quote.pageCount / factor / 48 * quote.copies * bhrRate) : 0;
+    const bhrCost = quote.includeBHR && quote.bhrHours ? (quote.bhrHours * bhrRate) : 0;
 
     const designService = additionalServices.find(s => s.service_name === 'Design');
     const isbnService = additionalServices.find(s => s.service_name === 'ISBN');
@@ -228,12 +236,9 @@ export const QuoteCalculator: React.FC = () => {
     const totalFinishingCost = finishingCost * quote.copies;
     const totalPackagingCost = packagingCost * quote.copies;
 
-    const bookSpecsTotal = totalPaperCost + totalTonerCost + totalCoverCost + totalFinishingCost + totalPackagingCost;
-    const additionalServicesTotal = designCost + isbnCost + bhrCost + othersCost;
-    const rawCost = bookSpecsTotal + additionalServicesTotal;
-
+    const rawCost = totalPaperCost + totalTonerCost + totalCoverCost + totalFinishingCost + totalPackagingCost + designCost + isbnCost + bhrCost + othersCost;
     const profitAmount = (rawCost * quote.profitMargin) / 100;
-    const finalQuotation = rawCost + profitAmount;
+    const finalQuotation = rawCost + profitAmount - quote.applyBulkDiscount;
 
     return {
       paperCost: totalPaperCost,
@@ -245,23 +250,11 @@ export const QuoteCalculator: React.FC = () => {
       designCost,
       isbnCost,
       othersCost,
-      bookSpecsTotal,
-      additionalServicesTotal,
       rawCost,
+      profitAmount,
       finalQuotation
     };
   }, [quote, paperCosts, tonerCosts, coverCosts, finishingCosts, packagingCosts, bhrSettings, additionalServices]);
-
-  const bulkDiscount = React.useMemo(() => {
-    if (!quote.applyBulkDiscount) return { apply: false, amount: 0 };
-    
-    const discountPercentage = quote.copies >= 1000 ? 0.15 : 
-                              quote.copies >= 500 ? 0.10 : 
-                              quote.copies >= 250 ? 0.05 : 0;
-    
-    const amount = calculations.finalQuotation * discountPercentage;
-    return { apply: discountPercentage > 0, amount };
-  }, [quote.applyBulkDiscount, quote.copies, calculations.finalQuotation]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -270,6 +263,23 @@ export const QuoteCalculator: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
+  };
+
+  const addOtherService = () => {
+    if (newOther.description && newOther.cost > 0) {
+      setQuote(prev => ({
+        ...prev,
+        others: [...prev.others, newOther]
+      }));
+      setNewOther({ description: '', cost: 0 });
+    }
+  };
+
+  const removeOtherService = (index: number) => {
+    setQuote(prev => ({
+      ...prev,
+      others: prev.others.filter((_, i) => i !== index)
+    }));
   };
 
   const generatePDF = async (): Promise<void> => {
@@ -296,13 +306,13 @@ export const QuoteCalculator: React.FC = () => {
         year: 'numeric'
       });
 
-      // Calculate additional services total
-      const additionalServicesTotal = 
-        (quote.includeDesign ? calculations.designCost : 0) +
-        (quote.includeISBN ? calculations.isbnCost : 0) +
-        quote.others.reduce((sum, item) => sum + item.cost, 0);
+      // Calculate additional services total (excluding BHR for display)
+      const additionalServicesTotal = calculations.designCost + calculations.isbnCost + calculations.othersCost;
+      
+      // Calculate printing cost total
+      const printingCostTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost;
 
-      // Document definition with type assertions to bypass strict typing
+      // Document definition
       const docDefinition: any = {
         pageSize: 'A4',
         pageMargins: [40, 60, 40, 60],
@@ -337,31 +347,31 @@ export const QuoteCalculator: React.FC = () => {
 
           // Customer & Staff Information (only show if filled)
           ...(quote.customerName || quote.customerEmail || quote.customerPhone || quote.staffName || quote.staffId ? [{
-            layout: 'noBorders' as any,
+            layout: 'noBorders',
             table: {
               widths: ['*'],
               body: [[{
                 stack: [
                   // Customer Information
                   ...(quote.customerName || quote.customerEmail || quote.customerPhone ? [
-                    { text: 'Customer Information', style: 'sectionHeader', margin: [0, 0, 0, 8] as [number, number, number, number] },
-                    ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : []),
-                    ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : []),
-                    ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : [])
+                    { text: 'Customer Information', style: 'sectionHeader', margin: [0, 0, 0, 8] },
+                    ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] }] : [])
                   ] : []),
                   
                   // Staff Information
                   ...(quote.staffName || quote.staffId ? [
-                    { text: 'Prepared By', style: 'sectionHeader', margin: [0, 10, 0, 8] as [number, number, number, number] },
-                    ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : []),
-                    ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : [])
+                    { text: 'Prepared By', style: 'sectionHeader', margin: [0, 10, 0, 8] },
+                    ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, fontSize: 10, margin: [0, 2, 0, 0] }] : [])
                   ] : [])
-                ] as any[],
+                ],
                 fillColor: '#F7FAFC',
-                margin: [12, 12, 12, 12] as [number, number, number, number]
+                margin: [12, 12, 12, 12]
               }]]
             },
-            margin: [0, 0, 0, 20] as [number, number, number, number]
+            margin: [0, 0, 0, 20]
           }] : []),
 
           // Book Specifications Section
@@ -394,7 +404,7 @@ export const QuoteCalculator: React.FC = () => {
                 table: {
                   widths: ['*'],
                   body: [[{
-                    text: `Printing Cost Total: ${formatCurrency(calculations.rawCost)}`,
+                    text: `Printing Cost Total: ${formatCurrency(printingCostTotal)}`,
                     style: 'totalLabel',
                     fillColor: '#254BE3',
                     color: 'white',
@@ -451,8 +461,8 @@ export const QuoteCalculator: React.FC = () => {
           }] : []),
 
           // Bulk Discount (only show if applied)
-          ...(bulkDiscount.apply && bulkDiscount.amount > 0 ? [{
-            text: `Bulk Discount: -${formatCurrency(bulkDiscount.amount)}`,
+          ...(quote.applyBulkDiscount > 0 ? [{
+            text: `Bulk Discount: -${formatCurrency(quote.applyBulkDiscount)}`,
             color: '#DC2626',
             bold: true,
             fontSize: 12,
@@ -465,7 +475,7 @@ export const QuoteCalculator: React.FC = () => {
             table: {
               widths: ['*'],
               body: [[{
-                text: `Final Quotation: ${formatCurrency(calculations.finalQuotation - (bulkDiscount.apply ? bulkDiscount.amount : 0))}`,
+                text: `Final Quotation: ${formatCurrency(calculations.finalQuotation)}`,
                 fillColor: '#254BE3',
                 color: 'white',
                 bold: true,
@@ -495,52 +505,39 @@ export const QuoteCalculator: React.FC = () => {
               { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' },
               { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' },
               { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Thank you for choosing Glit Publishers. This quotation is valid for 30 days.', fontSize: 10, italics: true, alignment: 'center', color: '#666666' }
+              { text: 'Thank you for choosing Glit Publishers. This quotation is valid for 30 days.', fontSize: 10, italics: true, alignment: 'center' }
             ]
           }
         ],
         styles: {
+          header: {
+            fontSize: 24,
+            bold: true,
+            color: 'white'
+          },
           sectionHeader: {
             fontSize: 14,
             bold: true,
-            color: '#2d3748',
-            margin: [0, 0, 0, 5]
+            color: '#254BE3',
+            margin: [0, 10, 0, 5]
           },
           totalLabel: {
             fontSize: 12,
             bold: true
           }
-        },
-        defaultStyle: {
-          fontSize: 10,
-          color: '#4a5568'
         }
       };
 
-      // Create and get PDF as blob
-      const pdfDoc = pdfMake.createPdf(docDefinition);
-      
-      pdfDoc.getBlob((blob: Blob) => {
-        // Download the PDF
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+      // Generate and download PDF
+      pdfMake.createPdf(docDefinition).download(fileName);
 
-        // Show success message
-        toast({
-          title: "Success!",
-          description: "PDF Quote generated successfully!",
-          variant: "default",
-          className: "bg-primary text-primary-foreground border-0",
-        });
+      toast({
+        title: "Success",
+        description: "Quote PDF generated successfully!",
       });
+
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('PDF generation error:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF. Please try again.",
@@ -549,127 +546,118 @@ export const QuoteCalculator: React.FC = () => {
     }
   };
 
-  const addOtherService = () => {
-    if (newOther.description && newOther.cost > 0) {
-      setQuote({ ...quote, others: [...quote.others, newOther] });
-      setNewOther({ description: '', cost: 0 });
-    }
-  };
-
-  const removeOtherService = (index: number) => {
-    const updatedOthers = quote.others.filter((_, i) => i !== index);
-    setQuote({ ...quote, others: updatedOthers });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-royal-blue-light via-background to-royal-blue-light/50">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Glit Quote Calculator</h1>
-          <p className="text-gray-600">Professional Printing Cost Estimation</p>
-          <div className="flex justify-center mt-4">
-            <Link 
-              to="/admin" 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Shield className="w-4 h-4" />
-              Admin Dashboard
-            </Link>
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-royal-blue to-royal-blue-dark rounded-full mb-4 shadow-lg">
+            <Calculator className="w-8 h-8 text-white" />
           </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-royal-blue to-royal-blue-dark bg-clip-text text-transparent mb-2">
+            Glit Quote Staff Console
+          </h1>
+          <p className="text-muted-foreground">Professional printing quotation system</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Quote Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Customer Information */}
-            <Card>
-              <CardHeader>
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Form */}
+          <div className="space-y-6">
+            
+            {/* Customer & Staff Information */}
+            <Card className="border-royal-blue/20 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Customer Information
+                  <Users className="w-5 h-5" />
+                  Customer & Staff Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="customerName">Customer Name</Label>
-                  <Input
-                    id="customerName"
-                    value={quote.customerName || ''}
-                    onChange={(e) => setQuote({ ...quote, customerName: e.target.value })}
-                    placeholder="Enter customer name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="customerEmail">Email</Label>
-                  <Input
-                    id="customerEmail"
-                    type="email"
-                    value={quote.customerEmail || ''}
-                    onChange={(e) => setQuote({ ...quote, customerEmail: e.target.value })}
-                    placeholder="Enter customer email"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="customerPhone">Phone Number</Label>
-                  <Input
-                    id="customerPhone"
-                    value={quote.customerPhone || ''}
-                    onChange={(e) => setQuote({ ...quote, customerPhone: e.target.value })}
-                    placeholder="Enter customer phone"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Staff Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCircle className="w-5 h-5" />
-                  Staff Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="staffName">Staff Name</Label>
-                  <Input
-                    id="staffName"
-                    value={quote.staffName || ''}
-                    onChange={(e) => setQuote({ ...quote, staffName: e.target.value })}
-                    placeholder="Enter staff name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="staffId">Staff ID</Label>
-                  <Input
-                    id="staffId"
-                    value={quote.staffId || ''}
-                    onChange={(e) => setQuote({ ...quote, staffId: e.target.value })}
-                    placeholder="Enter staff ID"
-                  />
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customerName" className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Customer Name
+                    </Label>
+                    <Input
+                      id="customerName"
+                      value={quote.customerName}
+                      onChange={(e) => setQuote(prev => ({...prev, customerName: e.target.value}))}
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerPhone" className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      Customer Phone
+                    </Label>
+                    <Input
+                      id="customerPhone"
+                      value={quote.customerPhone}
+                      onChange={(e) => setQuote(prev => ({...prev, customerPhone: e.target.value}))}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerEmail" className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Customer Email
+                    </Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      value={quote.customerEmail}
+                      onChange={(e) => setQuote(prev => ({...prev, customerEmail: e.target.value}))}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="staffName" className="flex items-center gap-2">
+                      <UserCircle2 className="w-4 h-4" />
+                      Prepared By (Staff Name)
+                    </Label>
+                    <Input
+                      id="staffName"
+                      value={quote.staffName}
+                      onChange={(e) => setQuote(prev => ({...prev, staffName: e.target.value}))}
+                      placeholder="Enter staff name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="staffId" className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Staff ID
+                    </Label>
+                    <Input
+                      id="staffId"
+                      value={quote.staffId}
+                      onChange={(e) => setQuote(prev => ({...prev, staffId: e.target.value}))}
+                      placeholder="Enter staff ID"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Book Specifications */}
-            <Card>
-              <CardHeader>
+            <Card className="border-royal-blue/20 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5" />
                   Book Specifications
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="bookSize" className="flex items-center gap-2">
                       <Maximize className="w-4 h-4" />
                       Book Size
                     </Label>
-                    <Select value={quote.bookSize} onValueChange={(value) => setQuote({ ...quote, bookSize: value })}>
+                    <Select value={quote.bookSize} onValueChange={(value) => setQuote(prev => ({...prev, bookSize: value}))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select size" />
+                        <SelectValue placeholder="Select book size" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A6">A6</SelectItem>
@@ -681,26 +669,23 @@ export const QuoteCalculator: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div>
                     <Label htmlFor="coverType" className="flex items-center gap-2">
-                      <Layers className="w-4 h-4" />
+                      <Book className="w-4 h-4" />
                       Cover Type
                     </Label>
-                    <Select value={quote.coverType} onValueChange={(value) => setQuote({ ...quote, coverType: value })}>
+                    <Select value={quote.coverType} onValueChange={(value) => setQuote(prev => ({...prev, coverType: value}))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select cover" />
+                        <SelectValue placeholder="Select cover type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Soft Cover">Soft Cover</SelectItem>
-                        <SelectItem value="Hard Cover (Casebound)">Hard Cover (Casebound)</SelectItem>
-                        <SelectItem value="Folded Cover (300gsm)">Folded Cover (300gsm)</SelectItem>
-                        <SelectItem value="Casebound with Folded Gloss Cover">Casebound with Folded Gloss Cover</SelectItem>
-                        <SelectItem value="Special Finishing (Hard/Folded)">Special Finishing (Hard/Folded)</SelectItem>
+                        <SelectItem value="Soft">Soft</SelectItem>
+                        <SelectItem value="Hard">Hard</SelectItem>
+                        <SelectItem value="Folded">Folded</SelectItem>
+                        <SelectItem value="Hard+Folded">Hard+Folded</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div>
                     <Label htmlFor="pageCount" className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
@@ -709,12 +694,11 @@ export const QuoteCalculator: React.FC = () => {
                     <Input
                       id="pageCount"
                       type="number"
-                      value={quote.pageCount || ''}
-                      onChange={(e) => setQuote({ ...quote, pageCount: parseInt(e.target.value) || 0 })}
+                      value={quote.pageCount}
+                      onChange={(e) => setQuote(prev => ({...prev, pageCount: parseInt(e.target.value) || 0}))}
                       placeholder="Enter page count"
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="copies" className="flex items-center gap-2">
                       <Copy className="w-4 h-4" />
@@ -723,37 +707,37 @@ export const QuoteCalculator: React.FC = () => {
                     <Input
                       id="copies"
                       type="number"
-                      value={quote.copies || ''}
-                      onChange={(e) => setQuote({ ...quote, copies: parseInt(e.target.value) || 0 })}
-                      placeholder="Enter copies"
+                      value={quote.copies}
+                      onChange={(e) => setQuote(prev => ({...prev, copies: parseInt(e.target.value) || 0}))}
+                      placeholder="Enter number of copies"
                     />
                   </div>
                 </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-blue-900">Total Pages to Print:</span>
-                    <span className="text-xl font-bold text-blue-700">
-                      {(quote.pageCount * quote.copies).toLocaleString()}
-                    </span>
+                <div className="bg-royal-blue-light p-4 rounded-lg border border-royal-blue/20">
+                  <div className="flex items-center gap-2 text-royal-blue font-semibold">
+                    <FileStack className="w-4 h-4" />
+                    Total Pages to Print: <span className="font-bold">{(quote.pageCount * quote.copies).toLocaleString()}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Paper & Interior */}
-            <Card>
-              <CardHeader>
+            <Card className="border-royal-blue/20 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
-                  <FileStack className="w-5 h-5" />
+                  <Printer className="w-5 h-5" />
                   Paper & Interior
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="paperType">Paper Type</Label>
-                    <Select value={quote.paperType} onValueChange={(value) => setQuote({ ...quote, paperType: value })}>
+                    <Label htmlFor="paperType" className="flex items-center gap-2">
+                      <Layers className="w-4 h-4" />
+                      Paper Type
+                    </Label>
+                    <Select value={quote.paperType} onValueChange={(value) => setQuote(prev => ({...prev, paperType: value}))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select paper type" />
                       </SelectTrigger>
@@ -768,15 +752,14 @@ export const QuoteCalculator: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div>
                     <Label htmlFor="interiorType" className="flex items-center gap-2">
-                      <Palette className="w-4 h-4" />
+                      <PaletteIcon className="w-4 h-4" />
                       Interior Type
                     </Label>
-                    <Select value={quote.interiorType} onValueChange={(value) => setQuote({ ...quote, interiorType: value })}>
+                    <Select value={quote.interiorType} onValueChange={(value) => setQuote(prev => ({...prev, interiorType: value}))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select interior" />
+                        <SelectValue placeholder="Select interior type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="B/W">B/W</SelectItem>
@@ -784,117 +767,146 @@ export const QuoteCalculator: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Finishing Cost (auto-calculated):</span>
-                    <span className="font-bold">{formatCurrency(calculations.finishingCost * quote.copies)}</span>
+                  <div>
+                    <Label htmlFor="finishingCost" className="flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      Finishing Cost (Override)
+                    </Label>
+                    <Input
+                      id="finishingCost"
+                      type="number"
+                      value={quote.finishingCostOverride || ''}
+                      onChange={(e) => setQuote(prev => ({...prev, finishingCostOverride: e.target.value ? parseFloat(e.target.value) : undefined}))}
+                      placeholder="Auto-calculated (override if needed)"
+                    />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Additional Services */}
-            <Card>
-              <CardHeader>
+            <Card className="border-royal-blue/20 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
+                  <PlusCircle className="w-5 h-5" />
                   Additional Services
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="includeDesign"
                       checked={quote.includeDesign}
-                      onCheckedChange={(checked) => setQuote({ ...quote, includeDesign: checked })}
+                      onCheckedChange={(checked) => setQuote(prev => ({...prev, includeDesign: checked}))}
                     />
                     <Label htmlFor="includeDesign" className="flex items-center gap-2">
                       <PenTool className="w-4 h-4" />
-                      Include Design
+                      Include Design (NGN 10,000)
                     </Label>
                   </div>
-
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="includeISBN"
                       checked={quote.includeISBN}
-                      onCheckedChange={(checked) => setQuote({ ...quote, includeISBN: checked })}
+                      onCheckedChange={(checked) => setQuote(prev => ({...prev, includeISBN: checked}))}
                     />
                     <Label htmlFor="includeISBN" className="flex items-center gap-2">
-                      <Book className="w-4 h-4" />
-                      Include ISBN
+                      <Bookmark className="w-4 h-4" />
+                      Include ISBN (NGN 8,000)
                     </Label>
                   </div>
-
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="includeBHR"
                       checked={quote.includeBHR}
-                      onCheckedChange={(checked) => setQuote({ ...quote, includeBHR: checked })}
+                      onCheckedChange={(checked) => setQuote(prev => ({...prev, includeBHR: checked}))}
                     />
                     <Label htmlFor="includeBHR" className="flex items-center gap-2">
                       <Cpu className="w-4 h-4" />
                       Apply BHR
                     </Label>
                   </div>
+                  {quote.includeBHR && (
+                    <div>
+                      <Label htmlFor="bhrHours">BHR Hours</Label>
+                      <Input
+                        id="bhrHours"
+                        type="number"
+                        step="0.1"
+                        value={quote.bhrHours || ''}
+                        onChange={(e) => setQuote(prev => ({...prev, bhrHours: parseFloat(e.target.value) || 0}))}
+                        placeholder="Enter BHR hours"
+                      />
+                    </div>
+                  )}
+                </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="applyBulkDiscount"
-                      checked={quote.applyBulkDiscount}
-                      onCheckedChange={(checked) => setQuote({ ...quote, applyBulkDiscount: checked })}
-                    />
-                    <Label htmlFor="applyBulkDiscount" className="flex items-center gap-2">
-                      <Percent className="w-4 h-4" />
-                      Apply Bulk Discount
-                    </Label>
-                  </div>
+                <div>
+                  <Label htmlFor="bulkDiscount" className="flex items-center gap-2">
+                    <Percent className="w-4 h-4" />
+                    Bulk Discount (NGN)
+                  </Label>
+                  <Input
+                    id="bulkDiscount"
+                    type="number"
+                    value={quote.applyBulkDiscount}
+                    onChange={(e) => setQuote(prev => ({...prev, applyBulkDiscount: parseFloat(e.target.value) || 0}))}
+                    placeholder="Enter discount amount"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="profitMargin" className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4" />
+                    Profit Margin (%)
+                  </Label>
+                  <Input
+                    id="profitMargin"
+                    type="number"
+                    value={quote.profitMargin}
+                    onChange={(e) => setQuote(prev => ({...prev, profitMargin: parseFloat(e.target.value) || 0}))}
+                    placeholder="Enter profit margin percentage"
+                  />
                 </div>
 
                 <Separator />
-                
-                {/* Others Section */}
-                <div>
-                  <Label className="flex items-center gap-2 mb-3">
-                    <PlusCircle className="w-4 h-4" />
-                    Others (Custom Services)
-                  </Label>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="md:col-span-2">
-                      <Input
-                        placeholder="Service description"
-                        value={newOther.description}
-                        onChange={(e) => setNewOther({ ...newOther, description: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Cost"
-                        value={newOther.cost || ''}
-                        onChange={(e) => setNewOther({ ...newOther, cost: parseInt(e.target.value) || 0 })}
-                      />
-                      <Button onClick={addOtherService} size="sm">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
 
+                <div>
+                  <Label className="text-base font-semibold">Others (Manual Adjustments)</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                    <Input
+                      placeholder="Description"
+                      value={newOther.description}
+                      onChange={(e) => setNewOther(prev => ({...prev, description: e.target.value}))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Cost (NGN)"
+                      value={newOther.cost}
+                      onChange={(e) => setNewOther(prev => ({...prev, cost: parseFloat(e.target.value) || 0}))}
+                    />
+                    <Button onClick={addOtherService} className="bg-royal-blue hover:bg-royal-blue-hover">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+                  
                   {quote.others.length > 0 && (
-                    <div className="space-y-2">
-                      {quote.others.map((other, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                          <span>{other.description}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{formatCurrency(other.cost)}</span>
-                            <Button variant="ghost" size="sm" onClick={() => removeOtherService(index)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                    <div className="mt-4 space-y-2">
+                      {quote.others.map((item, index) => (
+                        <div key={index} className="flex items-center justify-between bg-muted p-3 rounded-lg">
+                          <span>{item.description} - {formatCurrency(item.cost)}</span>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeOtherService(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -904,106 +916,120 @@ export const QuoteCalculator: React.FC = () => {
             </Card>
           </div>
 
-          {/* Quote Summary */}
+          {/* Right Column - Quote Breakdown */}
           <div className="space-y-6">
-            <Card className="sticky top-4">
-              <CardHeader>
+            <Card className="border-royal-blue/20 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
-                  <Calculator className="w-5 h-5" />
+                  <Receipt className="w-5 h-5" />
                   Quote Breakdown
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-yellow-800">Raw Cost:</span>
-                    <span className="font-bold text-yellow-900">{formatCurrency(calculations.rawCost)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="profitMargin" className="text-sm">Profit Margin (%):</Label>
-                      <Input
-                        id="profitMargin"
-                        type="number"
-                        value={quote.profitMargin}
-                        onChange={(e) => setQuote({ ...quote, profitMargin: parseInt(e.target.value) || 0 })}
-                        className="w-20 h-8"
-                      />
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Line Items */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Paper Cost:</span>
+                      <span className="font-semibold">{formatCurrency(calculations.paperCost)}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Profit Amount:</span>
-                      <span className="text-right">{formatCurrency((calculations.rawCost * quote.profitMargin) / 100)}</span>
+                    <div className="flex justify-between">
+                      <span>Toner Cost:</span>
+                      <span className="font-semibold">{formatCurrency(calculations.tonerCost)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Cover Cost:</span>
+                      <span className="font-semibold">{formatCurrency(calculations.coverCost)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Finishing Cost:</span>
+                      <span className="font-semibold">{formatCurrency(calculations.finishingCost)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Packaging Cost:</span>
+                      <span className="font-semibold">{formatCurrency(calculations.packagingCost)}</span>
+                    </div>
+                    {quote.includeDesign && (
+                      <div className="flex justify-between">
+                        <span>Design:</span>
+                        <span className="font-semibold">{formatCurrency(calculations.designCost)}</span>
+                      </div>
+                    )}
+                    {quote.includeISBN && (
+                      <div className="flex justify-between">
+                        <span>ISBN:</span>
+                        <span className="font-semibold">{formatCurrency(calculations.isbnCost)}</span>
+                      </div>
+                    )}
+                    {quote.includeBHR && calculations.bhrCost > 0 && (
+                      <div className="flex justify-between">
+                        <span>BHR:</span>
+                        <span className="font-semibold">{formatCurrency(calculations.bhrCost)}</span>
+                      </div>
+                    )}
+                    {quote.others.map((item, index) => (
+                      <div key={index} className="flex justify-between">
+                        <span>{item.description}:</span>
+                        <span className="font-semibold">{formatCurrency(item.cost)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  {/* Totals - Staff Console View */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-lg">
+                      <span className="font-semibold">Raw Cost:</span>
+                      <span className="font-bold">{formatCurrency(calculations.rawCost)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg">
+                      <span className="font-semibold">Profit Margin ({quote.profitMargin}%):</span>
+                      <span className="font-bold">{formatCurrency(calculations.profitAmount)}</span>
+                    </div>
+                    {quote.applyBulkDiscount > 0 && (
+                      <div className="flex justify-between text-lg text-destructive">
+                        <span className="font-semibold">Bulk Discount:</span>
+                        <span className="font-bold">-{formatCurrency(quote.applyBulkDiscount)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Final Quotation */}
+                  <div className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white p-4 rounded-lg">
+                    <div className="flex justify-between items-center text-xl">
+                      <span className="font-bold">Final Quotation:</span>
+                      <span className="font-bold">{formatCurrency(calculations.finalQuotation)}</span>
                     </div>
                   </div>
                 </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  {quote.includeDesign && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Design:</span>
-                      <span className="text-right">{formatCurrency(calculations.designCost)}</span>
-                    </div>
-                  )}
-                  {quote.includeISBN && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span>ISBN:</span>
-                      <span className="text-right">{formatCurrency(calculations.isbnCost)}</span>
-                    </div>
-                  )}
-                  {quote.includeBHR && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span>BHR:</span>
-                      <span className="text-right">{formatCurrency(calculations.bhrCost)}</span>
-                    </div>
-                  )}
-                  {quote.others.map((other, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <span>{other.description}:</span>
-                      <span className="text-right">{formatCurrency(other.cost)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {bulkDiscount.apply && (
-                  <>
-                    <Separator />
-                    <div className="flex items-center justify-between text-sm text-green-600">
-                      <span>Bulk Discount:</span>
-                      <span className="text-right">-{formatCurrency(bulkDiscount.amount)}</span>
-                    </div>
-                  </>
-                )}
-
-                <Separator />
-
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-blue-900 flex items-center gap-2">
-                      <Receipt className="w-4 h-4" />
-                      Final Quotation:
-                    </span>
-                    <span className="text-xl font-bold text-blue-700">
-                      {formatCurrency(calculations.finalQuotation - (bulkDiscount.apply ? bulkDiscount.amount : 0))}
-                    </span>
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={generatePDF} 
-                  size="lg" 
-                  className="w-full"
-                  disabled={!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Generate PDF Quote
-                </Button>
               </CardContent>
             </Card>
+
+            {/* Action Buttons */}
+            <div className="space-y-4">
+              <Button 
+                onClick={generatePDF} 
+                className="w-full bg-royal-blue hover:bg-royal-blue-hover text-white font-semibold py-3 text-lg"
+                size="lg"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Generate PDF Quote
+              </Button>
+              
+              <Link to="/admin">
+                <Button variant="outline" className="w-full border-royal-blue text-royal-blue hover:bg-royal-blue-light">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Admin Dashboard
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
+      
       <Toaster />
     </div>
   );
