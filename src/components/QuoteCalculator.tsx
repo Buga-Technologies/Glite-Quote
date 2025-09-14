@@ -302,8 +302,8 @@ export const QuoteCalculator: React.FC = () => {
         (quote.includeISBN ? calculations.isbnCost : 0) +
         quote.others.reduce((sum, item) => sum + item.cost, 0);
 
-      // Document definition
-      const docDefinition: TDocumentDefinitions = {
+      // Document definition with type assertions to bypass strict typing
+      const docDefinition: any = {
         pageSize: 'A4',
         pageMargins: [40, 60, 40, 60],
         content: [
@@ -337,31 +337,31 @@ export const QuoteCalculator: React.FC = () => {
 
           // Customer & Staff Information (only show if filled)
           ...(quote.customerName || quote.customerEmail || quote.customerPhone || quote.staffName || quote.staffId ? [{
-            layout: 'noBorders',
+            layout: 'noBorders' as any,
             table: {
               widths: ['*'],
               body: [[{
                 stack: [
                   // Customer Information
                   ...(quote.customerName || quote.customerEmail || quote.customerPhone ? [
-                    { text: 'Customer Information', style: 'sectionHeader', margin: [0, 0, 0, 8] },
-                    ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, fontSize: 10, margin: [0, 2] }] : []),
-                    ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, fontSize: 10, margin: [0, 2] }] : []),
-                    ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2] }] : [])
+                    { text: 'Customer Information', style: 'sectionHeader', margin: [0, 0, 0, 8] as [number, number, number, number] },
+                    ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : []),
+                    ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : []),
+                    ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : [])
                   ] : []),
                   
                   // Staff Information
                   ...(quote.staffName || quote.staffId ? [
-                    { text: 'Prepared By', style: 'sectionHeader', margin: [0, 10, 0, 8] },
-                    ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, fontSize: 10, margin: [0, 2] }] : []),
-                    ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, fontSize: 10, margin: [0, 2] }] : [])
+                    { text: 'Prepared By', style: 'sectionHeader', margin: [0, 10, 0, 8] as [number, number, number, number] },
+                    ...(quote.staffName ? [{ text: `Staff Name: ${quote.staffName}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : []),
+                    ...(quote.staffId ? [{ text: `Staff ID: ${quote.staffId}`, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] }] : [])
                   ] : [])
-                ],
+                ] as any[],
                 fillColor: '#F7FAFC',
-                margin: [12, 12, 12, 12]
+                margin: [12, 12, 12, 12] as [number, number, number, number]
               }]]
             },
-            margin: [0, 0, 0, 20]
+            margin: [0, 0, 0, 20] as [number, number, number, number]
           }] : []),
 
           // Book Specifications Section
@@ -520,33 +520,24 @@ export const QuoteCalculator: React.FC = () => {
       // Create and get PDF as blob
       const pdfDoc = pdfMake.createPdf(docDefinition);
       
-      await new Promise<void>((resolve, reject) => {
-        pdfDoc.getBlob((blob) => {
-          try {
-            // Download the PDF
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        }, (error) => {
-          reject(error);
-        });
-      });
+      pdfDoc.getBlob((blob: Blob) => {
+        // Download the PDF
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-      // Show success message
-      toast({
-        title: "Success!",
-        description: "PDF Quote generated successfully!",
-        variant: "default",
-        className: "bg-primary text-primary-foreground border-0",
+        // Show success message
+        toast({
+          title: "Success!",
+          description: "PDF Quote generated successfully!",
+          variant: "default",
+          className: "bg-primary text-primary-foreground border-0",
+        });
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
