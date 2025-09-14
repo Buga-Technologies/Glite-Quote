@@ -1,4 +1,3 @@
-/** @jsxImportSource react */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
