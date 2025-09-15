@@ -132,7 +132,7 @@ export const QuoteCalculator: React.FC = () => {
   const [additionalServices, setAdditionalServices] = useState<AdditionalService[]>([]);
   const [profitMargins, setProfitMargins] = useState<ProfitMargin[]>([]);
 
-  // Quote state
+  // Quote state - no default values for copies and profit margin
   const [quote, setQuote] = useState<Quote>({
     bookSize: '',
     paperType: '',
@@ -144,7 +144,7 @@ export const QuoteCalculator: React.FC = () => {
     includeISBN: false,
     includeBHR: false,
     applyBulkDiscount: 0,
-    profitMargin: 100,
+    profitMargin: 0,
     others: [],
     customerName: '',
     customerEmail: '',
@@ -154,6 +154,11 @@ export const QuoteCalculator: React.FC = () => {
     bhrHours: 0,
     finishingCostOverride: undefined
   });
+
+  // State for profit margin two-way binding
+  const [profitMarginPercent, setProfitMarginPercent] = useState<string>('');
+  const [profitMarginNGN, setProfitMarginNGN] = useState<string>('');
+  const [copiesValue, setCopiesValue] = useState<string>('');
 
   // New other service form
   const [newOther, setNewOther] = useState<OtherService>({
@@ -263,6 +268,39 @@ export const QuoteCalculator: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
+  };
+
+  // Handle profit margin percentage change
+  const handleProfitMarginPercentChange = (value: string) => {
+    setProfitMarginPercent(value);
+    const numericValue = parseFloat(value) || 0;
+    setQuote(prev => ({...prev, profitMargin: numericValue}));
+    
+    // Auto-calculate NGN amount
+    if (calculations.rawCost > 0) {
+      const ngnAmount = (calculations.rawCost * numericValue) / 100;
+      setProfitMarginNGN(ngnAmount.toString());
+    }
+  };
+
+  // Handle profit margin NGN amount change
+  const handleProfitMarginNGNChange = (value: string) => {
+    setProfitMarginNGN(value);
+    const numericValue = parseFloat(value) || 0;
+    
+    // Auto-calculate percentage
+    if (calculations.rawCost > 0) {
+      const percentage = (numericValue / calculations.rawCost) * 100;
+      setProfitMarginPercent(percentage.toFixed(2));
+      setQuote(prev => ({...prev, profitMargin: percentage}));
+    }
+  };
+
+  // Handle copies change
+  const handleCopiesChange = (value: string) => {
+    setCopiesValue(value);
+    const numericValue = parseInt(value) || 0;
+    setQuote(prev => ({...prev, copies: numericValue}));
   };
 
   const addOtherService = () => {
@@ -549,15 +587,28 @@ export const QuoteCalculator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-royal-blue-light via-background to-royal-blue-light/50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-royal-blue to-royal-blue-dark rounded-full mb-4 shadow-lg">
-            <Calculator className="w-8 h-8 text-white" />
+        {/* Header with Admin Icon */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div></div>
+            {/* Admin icon at top right */}
+            <Link to="/admin">
+              <Button variant="outline" className="border-royal-blue text-royal-blue hover:bg-royal-blue-light">
+                <Settings className="w-4 h-4 mr-2" />
+                Admin Dashboard
+              </Button>
+            </Link>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-royal-blue to-royal-blue-dark bg-clip-text text-transparent mb-2">
-            Glit Quote Staff Console
-          </h1>
-          <p className="text-muted-foreground">Professional printing quotation system</p>
+          
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-royal-blue to-royal-blue-dark rounded-full mb-4 shadow-lg">
+              <Calculator className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-royal-blue to-royal-blue-dark bg-clip-text text-transparent mb-2">
+              Glit Quote Staff Console
+            </h1>
+            <p className="text-muted-foreground">Professional printing quotation system</p>
+          </div>
         </div>
 
         {/* Two-column layout */}
@@ -565,18 +616,18 @@ export const QuoteCalculator: React.FC = () => {
           {/* Left Column - Form */}
           <div className="space-y-6">
             
-            {/* Customer & Staff Information */}
+            {/* Customer Information */}
             <Card className="border-royal-blue/20 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Customer & Staff Information
+                <CardTitle className="flex items-center gap-2 p-2">
+                  <User className="w-5 h-5" />
+                  Customer Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <Label htmlFor="customerName" className="flex items-center gap-2">
+                    <Label htmlFor="customerName" className="flex items-center gap-2 mb-3">
                       <User className="w-4 h-4" />
                       Customer Name
                     </Label>
@@ -588,7 +639,7 @@ export const QuoteCalculator: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="customerPhone" className="flex items-center gap-2">
+                    <Label htmlFor="customerPhone" className="flex items-center gap-2 mb-3">
                       <Phone className="w-4 h-4" />
                       Customer Phone
                     </Label>
@@ -600,7 +651,7 @@ export const QuoteCalculator: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="customerEmail" className="flex items-center gap-2">
+                    <Label htmlFor="customerEmail" className="flex items-center gap-2 mb-3">
                       <Mail className="w-4 h-4" />
                       Customer Email
                     </Label>
@@ -612,8 +663,22 @@ export const QuoteCalculator: React.FC = () => {
                       placeholder="Enter email address"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Staff Information */}
+            <Card className="border-royal-blue/20 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-2 p-2">
+                  <Users className="w-5 h-5" />
+                  Staff Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <Label htmlFor="staffName" className="flex items-center gap-2">
+                    <Label htmlFor="staffName" className="flex items-center gap-2 mb-3">
                       <UserCircle2 className="w-4 h-4" />
                       Prepared By (Staff Name)
                     </Label>
@@ -625,7 +690,7 @@ export const QuoteCalculator: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="staffId" className="flex items-center gap-2">
+                    <Label htmlFor="staffId" className="flex items-center gap-2 mb-3">
                       <Shield className="w-4 h-4" />
                       Staff ID
                     </Label>
@@ -643,7 +708,7 @@ export const QuoteCalculator: React.FC = () => {
             {/* Book Specifications */}
             <Card className="border-royal-blue/20 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 p-2">
                   <BookOpen className="w-5 h-5" />
                   Book Specifications
                 </CardTitle>
@@ -651,7 +716,7 @@ export const QuoteCalculator: React.FC = () => {
               <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="bookSize" className="flex items-center gap-2">
+                    <Label htmlFor="bookSize" className="flex items-center gap-2 mb-3">
                       <Maximize className="w-4 h-4" />
                       Book Size
                     </Label>
@@ -670,7 +735,7 @@ export const QuoteCalculator: React.FC = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="coverType" className="flex items-center gap-2">
+                    <Label htmlFor="coverType" className="flex items-center gap-2 mb-3">
                       <Book className="w-4 h-4" />
                       Cover Type
                     </Label>
@@ -687,7 +752,7 @@ export const QuoteCalculator: React.FC = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="pageCount" className="flex items-center gap-2">
+                    <Label htmlFor="pageCount" className="flex items-center gap-2 mb-3">
                       <FileText className="w-4 h-4" />
                       Page Count
                     </Label>
@@ -700,15 +765,15 @@ export const QuoteCalculator: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="copies" className="flex items-center gap-2">
+                    <Label htmlFor="copies" className="flex items-center gap-2 mb-3">
                       <Copy className="w-4 h-4" />
                       Copies
                     </Label>
                     <Input
                       id="copies"
                       type="number"
-                      value={quote.copies}
-                      onChange={(e) => setQuote(prev => ({...prev, copies: parseInt(e.target.value) || 0}))}
+                      value={copiesValue}
+                      onChange={(e) => handleCopiesChange(e.target.value)}
                       placeholder="Enter number of copies"
                     />
                   </div>
@@ -725,7 +790,7 @@ export const QuoteCalculator: React.FC = () => {
             {/* Paper & Interior */}
             <Card className="border-royal-blue/20 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 p-2">
                   <Printer className="w-5 h-5" />
                   Paper & Interior
                 </CardTitle>
@@ -733,7 +798,7 @@ export const QuoteCalculator: React.FC = () => {
               <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="paperType" className="flex items-center gap-2">
+                    <Label htmlFor="paperType" className="flex items-center gap-2 mb-3">
                       <Layers className="w-4 h-4" />
                       Paper Type
                     </Label>
@@ -753,7 +818,7 @@ export const QuoteCalculator: React.FC = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="interiorType" className="flex items-center gap-2">
+                    <Label htmlFor="interiorType" className="flex items-center gap-2 mb-3">
                       <PaletteIcon className="w-4 h-4" />
                       Interior Type
                     </Label>
@@ -767,8 +832,8 @@ export const QuoteCalculator: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="finishingCost" className="flex items-center gap-2">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="finishingCost" className="flex items-center gap-2 mb-3">
                       <Settings className="w-4 h-4" />
                       Finishing Cost (Override)
                     </Label>
@@ -787,7 +852,7 @@ export const QuoteCalculator: React.FC = () => {
             {/* Additional Services */}
             <Card className="border-royal-blue/20 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 p-2">
                   <PlusCircle className="w-5 h-5" />
                   Additional Services
                 </CardTitle>
@@ -832,7 +897,10 @@ export const QuoteCalculator: React.FC = () => {
                   </div>
                   {quote.includeBHR && (
                     <div>
-                      <Label htmlFor="bhrHours">BHR Hours</Label>
+                      <Label htmlFor="bhrHours" className="flex items-center gap-2 mb-3">
+                        <Cpu className="w-4 h-4" />
+                        BHR Hours
+                      </Label>
                       <Input
                         id="bhrHours"
                         type="number"
@@ -846,7 +914,7 @@ export const QuoteCalculator: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="bulkDiscount" className="flex items-center gap-2">
+                  <Label htmlFor="bulkDiscount" className="flex items-center gap-2 mb-3">
                     <Percent className="w-4 h-4" />
                     Bulk Discount (NGN)
                   </Label>
@@ -859,24 +927,43 @@ export const QuoteCalculator: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="profitMargin" className="flex items-center gap-2">
-                    <Wallet className="w-4 h-4" />
-                    Profit Margin (%)
-                  </Label>
-                  <Input
-                    id="profitMargin"
-                    type="number"
-                    value={quote.profitMargin}
-                    onChange={(e) => setQuote(prev => ({...prev, profitMargin: parseFloat(e.target.value) || 0}))}
-                    placeholder="Enter profit margin percentage"
-                  />
+                {/* Two-way binding for Profit Margin */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="profitMarginPercent" className="flex items-center gap-2 mb-3">
+                      <Percent className="w-4 h-4" />
+                      Profit Margin (%)
+                    </Label>
+                    <Input
+                      id="profitMarginPercent"
+                      type="number"
+                      value={profitMarginPercent}
+                      onChange={(e) => handleProfitMarginPercentChange(e.target.value)}
+                      placeholder="Enter profit margin percentage"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profitMarginNGN" className="flex items-center gap-2 mb-3">
+                      <Wallet className="w-4 h-4" />
+                      Profit Margin (NGN)
+                    </Label>
+                    <Input
+                      id="profitMarginNGN"
+                      type="number"
+                      value={profitMarginNGN}
+                      onChange={(e) => handleProfitMarginNGNChange(e.target.value)}
+                      placeholder="Enter profit margin amount"
+                    />
+                  </div>
                 </div>
 
                 <Separator />
 
                 <div>
-                  <Label className="text-base font-semibold">Others (Manual Adjustments)</Label>
+                  <Label className="text-base font-semibold mb-3 flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Others (Manual Adjustments)
+                  </Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
                     <Input
                       placeholder="Description"
@@ -920,7 +1007,7 @@ export const QuoteCalculator: React.FC = () => {
           <div className="space-y-6">
             <Card className="border-royal-blue/20 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 p-2">
                   <Receipt className="w-5 h-5" />
                   Quote Breakdown
                 </CardTitle>
@@ -931,46 +1018,46 @@ export const QuoteCalculator: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span>Paper Cost:</span>
-                      <span className="font-semibold">{formatCurrency(calculations.paperCost)}</span>
+                      <span className="font-semibold text-right">{formatCurrency(calculations.paperCost)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Toner Cost:</span>
-                      <span className="font-semibold">{formatCurrency(calculations.tonerCost)}</span>
+                      <span className="font-semibold text-right">{formatCurrency(calculations.tonerCost)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Cover Cost:</span>
-                      <span className="font-semibold">{formatCurrency(calculations.coverCost)}</span>
+                      <span className="font-semibold text-right">{formatCurrency(calculations.coverCost)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Finishing Cost:</span>
-                      <span className="font-semibold">{formatCurrency(calculations.finishingCost)}</span>
+                      <span className="font-semibold text-right">{formatCurrency(calculations.finishingCost)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Packaging Cost:</span>
-                      <span className="font-semibold">{formatCurrency(calculations.packagingCost)}</span>
+                      <span className="font-semibold text-right">{formatCurrency(calculations.packagingCost)}</span>
                     </div>
                     {quote.includeDesign && (
                       <div className="flex justify-between">
                         <span>Design:</span>
-                        <span className="font-semibold">{formatCurrency(calculations.designCost)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(calculations.designCost)}</span>
                       </div>
                     )}
                     {quote.includeISBN && (
                       <div className="flex justify-between">
                         <span>ISBN:</span>
-                        <span className="font-semibold">{formatCurrency(calculations.isbnCost)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(calculations.isbnCost)}</span>
                       </div>
                     )}
                     {quote.includeBHR && calculations.bhrCost > 0 && (
                       <div className="flex justify-between">
                         <span>BHR:</span>
-                        <span className="font-semibold">{formatCurrency(calculations.bhrCost)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(calculations.bhrCost)}</span>
                       </div>
                     )}
                     {quote.others.map((item, index) => (
                       <div key={index} className="flex justify-between">
                         <span>{item.description}:</span>
-                        <span className="font-semibold">{formatCurrency(item.cost)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(item.cost)}</span>
                       </div>
                     ))}
                   </div>
@@ -981,16 +1068,16 @@ export const QuoteCalculator: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between text-lg">
                       <span className="font-semibold">Raw Cost:</span>
-                      <span className="font-bold">{formatCurrency(calculations.rawCost)}</span>
+                      <span className="font-bold text-right">{formatCurrency(calculations.rawCost)}</span>
                     </div>
                     <div className="flex justify-between text-lg">
-                      <span className="font-semibold">Profit Margin ({quote.profitMargin}%):</span>
-                      <span className="font-bold">{formatCurrency(calculations.profitAmount)}</span>
+                      <span className="font-semibold">Profit Margin ({quote.profitMargin.toFixed(2)}%):</span>
+                      <span className="font-bold text-right">{formatCurrency(calculations.profitAmount)}</span>
                     </div>
                     {quote.applyBulkDiscount > 0 && (
                       <div className="flex justify-between text-lg text-destructive">
                         <span className="font-semibold">Bulk Discount:</span>
-                        <span className="font-bold">-{formatCurrency(quote.applyBulkDiscount)}</span>
+                        <span className="font-bold text-right">-{formatCurrency(quote.applyBulkDiscount)}</span>
                       </div>
                     )}
                   </div>
@@ -1001,7 +1088,7 @@ export const QuoteCalculator: React.FC = () => {
                   <div className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white p-4 rounded-lg">
                     <div className="flex justify-between items-center text-xl">
                       <span className="font-bold">Final Quotation:</span>
-                      <span className="font-bold">{formatCurrency(calculations.finalQuotation)}</span>
+                      <span className="font-bold text-right">{formatCurrency(calculations.finalQuotation)}</span>
                     </div>
                   </div>
                 </div>
@@ -1018,13 +1105,6 @@ export const QuoteCalculator: React.FC = () => {
                 <Download className="w-5 h-5 mr-2" />
                 Generate PDF Quote
               </Button>
-              
-              <Link to="/admin">
-                <Button variant="outline" className="w-full border-royal-blue text-royal-blue hover:bg-royal-blue-light">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Admin Dashboard
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
