@@ -132,7 +132,7 @@ export const QuoteCalculator: React.FC = () => {
   const [additionalServices, setAdditionalServices] = useState<AdditionalService[]>([]);
   const [profitMargins, setProfitMargins] = useState<ProfitMargin[]>([]);
 
-  // Quote state - no default values for copies and profit margin
+  // Quote state - no default values for page count, copies and profit margin
   const [quote, setQuote] = useState<Quote>({
     bookSize: '',
     paperType: '',
@@ -151,14 +151,16 @@ export const QuoteCalculator: React.FC = () => {
     customerPhone: '',
     staffName: '',
     staffId: '',
-    bhrHours: 0,
-    finishingCostOverride: undefined
+    bhrHours: 0
   });
 
-  // State for profit margin two-way binding
+  // State for profit margin two-way binding and empty field inputs
   const [profitMarginPercent, setProfitMarginPercent] = useState<string>('');
   const [profitMarginNGN, setProfitMarginNGN] = useState<string>('');
   const [copiesValue, setCopiesValue] = useState<string>('');
+  const [pageCountValue, setPageCountValue] = useState<string>('');
+  const [bulkDiscountEnabled, setBulkDiscountEnabled] = useState<boolean>(false);
+  const [bulkDiscountValue, setBulkDiscountValue] = useState<string>('');
 
   // New other service form
   const [newOther, setNewOther] = useState<OtherService>({
@@ -216,12 +218,10 @@ export const QuoteCalculator: React.FC = () => {
       c.cover_type === quote.coverType && c.size === quote.bookSize
     )?.cost || 0;
 
-    const defaultFinishingCost = finishingCosts.find(f => 
+    const finishingCost = finishingCosts.find(f => 
       quote.pageCount >= f.page_range_min && 
       (f.page_range_max === null || quote.pageCount <= f.page_range_max)
     )?.cost || 0;
-
-    const finishingCost = quote.finishingCostOverride !== undefined ? quote.finishingCostOverride : defaultFinishingCost;
 
     const packagingCost = packagingCosts.find(p => p.size === quote.bookSize)?.cost || 0;
 
@@ -301,6 +301,29 @@ export const QuoteCalculator: React.FC = () => {
     setCopiesValue(value);
     const numericValue = parseInt(value) || 0;
     setQuote(prev => ({...prev, copies: numericValue}));
+  };
+
+  // Handle page count change
+  const handlePageCountChange = (value: string) => {
+    setPageCountValue(value);
+    const numericValue = parseInt(value) || 0;
+    setQuote(prev => ({...prev, pageCount: numericValue}));
+  };
+
+  // Handle bulk discount change
+  const handleBulkDiscountChange = (value: string) => {
+    setBulkDiscountValue(value);
+    const numericValue = parseFloat(value) || 0;
+    setQuote(prev => ({...prev, applyBulkDiscount: numericValue}));
+  };
+
+  // Handle bulk discount toggle
+  const handleBulkDiscountToggle = (checked: boolean) => {
+    setBulkDiscountEnabled(checked);
+    if (!checked) {
+      setBulkDiscountValue('');
+      setQuote(prev => ({...prev, applyBulkDiscount: 0}));
+    }
   };
 
   const addOtherService = () => {
@@ -759,8 +782,8 @@ export const QuoteCalculator: React.FC = () => {
                     <Input
                       id="pageCount"
                       type="number"
-                      value={quote.pageCount}
-                      onChange={(e) => setQuote(prev => ({...prev, pageCount: parseInt(e.target.value) || 0}))}
+                      value={pageCountValue}
+                      onChange={(e) => handlePageCountChange(e.target.value)}
                       placeholder="Enter page count"
                     />
                   </div>
@@ -833,17 +856,13 @@ export const QuoteCalculator: React.FC = () => {
                     </Select>
                   </div>
                   <div className="md:col-span-2">
-                    <Label htmlFor="finishingCost" className="flex items-center gap-2 mb-3">
-                      <Settings className="w-4 h-4" />
-                      Finishing Cost (Override)
-                    </Label>
-                    <Input
-                      id="finishingCost"
-                      type="number"
-                      value={quote.finishingCostOverride || ''}
-                      onChange={(e) => setQuote(prev => ({...prev, finishingCostOverride: e.target.value ? parseFloat(e.target.value) : undefined}))}
-                      placeholder="Auto-calculated (override if needed)"
-                    />
+                    <div className="bg-royal-blue-light p-4 rounded-lg border border-royal-blue/20">
+                      <div className="flex items-center gap-2 text-royal-blue font-semibold">
+                        <Settings className="w-4 h-4" />
+                        Finishing Cost: <span className="font-bold">{formatCurrency(calculations.finishingCost)}</span>
+                        <span className="text-sm text-muted-foreground ml-2">(Auto-calculated)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -913,18 +932,33 @@ export const QuoteCalculator: React.FC = () => {
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="bulkDiscount" className="flex items-center gap-2 mb-3">
-                    <Percent className="w-4 h-4" />
-                    Bulk Discount (NGN)
-                  </Label>
-                  <Input
-                    id="bulkDiscount"
-                    type="number"
-                    value={quote.applyBulkDiscount}
-                    onChange={(e) => setQuote(prev => ({...prev, applyBulkDiscount: parseFloat(e.target.value) || 0}))}
-                    placeholder="Enter discount amount"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="bulkDiscountToggle"
+                      checked={bulkDiscountEnabled}
+                      onCheckedChange={handleBulkDiscountToggle}
+                    />
+                    <Label htmlFor="bulkDiscountToggle" className="flex items-center gap-2">
+                      <Percent className="w-4 h-4" />
+                      Apply Bulk Discount
+                    </Label>
+                  </div>
+                  {bulkDiscountEnabled && (
+                    <div>
+                      <Label htmlFor="bulkDiscount" className="flex items-center gap-2 mb-3">
+                        <Percent className="w-4 h-4" />
+                        Discount Amount (NGN)
+                      </Label>
+                      <Input
+                        id="bulkDiscount"
+                        type="number"
+                        value={bulkDiscountValue}
+                        onChange={(e) => handleBulkDiscountChange(e.target.value)}
+                        placeholder="Enter discount amount"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Two-way binding for Profit Margin */}
