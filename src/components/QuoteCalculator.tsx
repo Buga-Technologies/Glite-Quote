@@ -225,8 +225,7 @@ export const QuoteCalculator: React.FC = () => {
 
     const packagingCost = packagingCosts.find(p => p.size === quote.bookSize)?.cost || 0;
 
-    const bhrRate = bhrSettings[0]?.rate_per_hour || 3000;
-    const bhrCost = quote.includeBHR && quote.bhrHours ? (quote.bhrHours * bhrRate) : 0;
+    const bhrCost = quote.includeBHR && quote.bhrHours ? quote.bhrHours : 0;
 
     const designService = additionalServices.find(s => s.service_name === 'Design');
     const isbnService = additionalServices.find(s => s.service_name === 'ISBN');
@@ -523,10 +522,18 @@ export const QuoteCalculator: React.FC = () => {
 
           // Bulk Discount (only show if applied)
           ...(quote.applyBulkDiscount > 0 ? [{
-            text: `Bulk Discount: -${formatCurrency(quote.applyBulkDiscount)}`,
-            color: '#DC2626',
-            bold: true,
-            fontSize: 12,
+            layout: {
+              hLineWidth: () => 0.5,
+              vLineWidth: () => 0.5,
+              hLineColor: () => '#E2E8F0',
+              vLineColor: () => '#E2E8F0'
+            },
+            table: {
+              widths: ['*', 'auto'],
+              body: [
+                ['Bulk Discount', `-${formatCurrency(quote.applyBulkDiscount)}`]
+              ]
+            },
             margin: [0, 0, 0, 10]
           }] : []),
 
@@ -536,13 +543,35 @@ export const QuoteCalculator: React.FC = () => {
             table: {
               widths: ['*'],
               body: [[{
-                text: `Final Quotation: ${formatCurrency(calculations.finalQuotation)}`,
-                fillColor: '#254BE3',
-                color: 'white',
-                bold: true,
-                fontSize: 18,
-                alignment: 'center',
-                margin: [16, 16, 16, 16]
+                layout: {
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                  hLineColor: () => '#E2E8F0',
+                  vLineColor: () => '#E2E8F0'
+                },
+                table: {
+                  widths: ['*', 'auto'],
+                  body: [
+                    [{
+                      text: 'Final Quotation',
+                      style: 'finalQuotationLabel',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      fontSize: 16,
+                      margin: [12, 8, 12, 8]
+                    }, {
+                      text: formatCurrency(calculations.finalQuotation),
+                      style: 'finalQuotationAmount',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      fontSize: 16,
+                      alignment: 'right',
+                      margin: [12, 8, 12, 8]
+                    }]
+                  ]
+                }
               }]]
             },
             margin: [0, 20, 0, 40]
@@ -916,17 +945,16 @@ export const QuoteCalculator: React.FC = () => {
                   </div>
                   {quote.includeBHR && (
                     <div>
-                      <Label htmlFor="bhrHours" className="flex items-center gap-2 mb-3">
+                      <Label htmlFor="bhrAmount" className="flex items-center gap-2 mb-3">
                         <Cpu className="w-4 h-4" />
-                        BHR Hours
+                        BHR Amount (NGN)
                       </Label>
                       <Input
-                        id="bhrHours"
+                        id="bhrAmount"
                         type="number"
-                        step="0.1"
                         value={quote.bhrHours || ''}
                         onChange={(e) => setQuote(prev => ({...prev, bhrHours: parseFloat(e.target.value) || 0}))}
-                        placeholder="Enter BHR hours"
+                        placeholder="Enter BHR amount"
                       />
                     </div>
                   )}
@@ -996,7 +1024,7 @@ export const QuoteCalculator: React.FC = () => {
                 <div>
                   <Label className="text-base font-semibold mb-3 flex items-center gap-2">
                     <Plus className="w-4 h-4" />
-                    Others (Manual Adjustments)
+                    Others
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
                     <Input
@@ -1007,7 +1035,7 @@ export const QuoteCalculator: React.FC = () => {
                     <Input
                       type="number"
                       placeholder="Cost (NGN)"
-                      value={newOther.cost}
+                      value={newOther.cost === 0 ? '' : newOther.cost}
                       onChange={(e) => setNewOther(prev => ({...prev, cost: parseFloat(e.target.value) || 0}))}
                     />
                     <Button onClick={addOtherService} className="bg-royal-blue hover:bg-royal-blue-hover">
@@ -1098,16 +1126,47 @@ export const QuoteCalculator: React.FC = () => {
 
                   <Separator />
 
-                  {/* Totals - Staff Console View */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-lg">
-                      <span className="font-semibold">Raw Cost:</span>
-                      <span className="font-bold text-right">{formatCurrency(calculations.rawCost)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg">
-                      <span className="font-semibold">Profit Margin ({quote.profitMargin.toFixed(2)}%):</span>
-                      <span className="font-bold text-right">{formatCurrency(calculations.profitAmount)}</span>
-                    </div>
+                   {/* Totals - Staff Console View */}
+                   <div className="space-y-3">
+                     {/* Profit Margin Controls */}
+                     <div className="bg-royal-blue-light p-4 rounded-lg border border-royal-blue/20 space-y-3">
+                       <div className="flex items-center gap-2 text-royal-blue font-semibold">
+                         <Percent className="w-4 h-4" />
+                         Profit Margin
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                         <div>
+                           <Label htmlFor="profitMarginPercent">Percentage (%)</Label>
+                           <Input
+                             id="profitMarginPercent"
+                             type="number"
+                             step="0.01"
+                             value={profitMarginPercent}
+                             onChange={(e) => handleProfitMarginPercentChange(e.target.value)}
+                             placeholder="Enter profit margin %"
+                           />
+                         </div>
+                         <div>
+                           <Label htmlFor="profitMarginNGN">Amount (NGN)</Label>
+                           <Input
+                             id="profitMarginNGN"
+                             type="number"
+                             value={profitMarginNGN}
+                             onChange={(e) => handleProfitMarginNGNChange(e.target.value)}
+                             placeholder="Enter profit amount"
+                           />
+                         </div>
+                       </div>
+                     </div>
+                     
+                     <div className="flex justify-between text-lg">
+                       <span className="font-semibold">Raw Cost:</span>
+                       <span className="font-bold text-right">{formatCurrency(calculations.rawCost)}</span>
+                     </div>
+                     <div className="flex justify-between text-lg">
+                       <span className="font-semibold">Profit Margin ({quote.profitMargin.toFixed(2)}%):</span>
+                       <span className="font-bold text-right">{formatCurrency(calculations.profitAmount)}</span>
+                     </div>
                     {quote.applyBulkDiscount > 0 && (
                       <div className="flex justify-between text-lg text-destructive">
                         <span className="font-semibold">Bulk Discount:</span>
