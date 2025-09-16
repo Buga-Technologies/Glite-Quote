@@ -460,18 +460,32 @@ export const QuoteCalculator: React.FC = () => {
               },
               // Printing Cost Total
               {
-                layout: 'noBorders',
+                layout: {
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                  hLineColor: () => '#E2E8F0',
+                  vLineColor: () => '#E2E8F0'
+                },
                 table: {
-                  widths: ['*'],
-                  body: [[{
-                    text: `Printing Cost Total: ${formatCurrency(printingCostTotal)}`,
-                    style: 'totalLabel',
-                    fillColor: '#254BE3',
-                    color: 'white',
-                    bold: true,
-                    alignment: 'center',
-                    margin: [12, 8, 12, 8]
-                  }]]
+                  widths: ['*', 'auto'],
+                  body: [
+                    [{
+                      text: 'Printing Cost Total',
+                      style: 'totalLabel',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      margin: [12, 8, 12, 8]
+                    }, {
+                      text: formatCurrency(printingCostTotal),
+                      style: 'totalLabel',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      alignment: 'right',
+                      margin: [12, 8, 12, 8]
+                    }]
+                  ]
                 },
                 margin: [0, 10, 0, 0]
               }
@@ -501,18 +515,32 @@ export const QuoteCalculator: React.FC = () => {
               },
               // Additional Services Total
               {
-                layout: 'noBorders',
+                layout: {
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                  hLineColor: () => '#E2E8F0',
+                  vLineColor: () => '#E2E8F0'
+                },
                 table: {
-                  widths: ['*'],
-                  body: [[{
-                    text: `Additional Services Total: ${formatCurrency(additionalServicesTotal)}`,
-                    style: 'totalLabel',
-                    fillColor: '#254BE3',
-                    color: 'white',
-                    bold: true,
-                    alignment: 'center',
-                    margin: [12, 8, 12, 8]
-                  }]]
+                  widths: ['*', 'auto'],
+                  body: [
+                    [{
+                      text: 'Additional Services Total',
+                      style: 'totalLabel',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      margin: [12, 8, 12, 8]
+                    }, {
+                      text: formatCurrency(additionalServicesTotal),
+                      style: 'totalLabel',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      alignment: 'right',
+                      margin: [12, 8, 12, 8]
+                    }]
+                  ]
                 },
                 margin: [0, 10, 0, 0]
               }
@@ -574,10 +602,20 @@ export const QuoteCalculator: React.FC = () => {
                 }
               }]]
             },
-            margin: [0, 20, 0, 40]
+            margin: [0, 20, 0, 20]
           },
 
-          // Footer
+          // Contact Details (immediately below Final Quotation)
+          {
+            stack: [
+              { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' },
+              { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' },
+              { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] }
+            ],
+            margin: [0, 10, 0, 20]
+          },
+
+          // Footer with line separator
           {
             canvas: [{ 
               type: 'line', 
@@ -591,12 +629,10 @@ export const QuoteCalculator: React.FC = () => {
             margin: [0, 0, 0, 12]
           },
           {
-            stack: [
-              { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' },
-              { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' },
-              { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Thank you for choosing Glit Publishers. This quotation is valid for 30 days.', fontSize: 10, italics: true, alignment: 'center' }
-            ]
+            text: 'Thank you for choosing Glit Publishers. This quotation is valid for 30 days.',
+            fontSize: 10,
+            italics: true,
+            alignment: 'center'
           }
         ],
         styles: {
@@ -989,35 +1025,6 @@ export const QuoteCalculator: React.FC = () => {
                   )}
                 </div>
 
-                {/* Two-way binding for Profit Margin */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="profitMarginPercent" className="flex items-center gap-2 mb-3">
-                      <Percent className="w-4 h-4" />
-                      Profit Margin (%)
-                    </Label>
-                    <Input
-                      id="profitMarginPercent"
-                      type="number"
-                      value={profitMarginPercent}
-                      onChange={(e) => handleProfitMarginPercentChange(e.target.value)}
-                      placeholder="Enter profit margin percentage"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="profitMarginNGN" className="flex items-center gap-2 mb-3">
-                      <Wallet className="w-4 h-4" />
-                      Profit Margin (NGN)
-                    </Label>
-                    <Input
-                      id="profitMarginNGN"
-                      type="number"
-                      value={profitMarginNGN}
-                      onChange={(e) => handleProfitMarginNGNChange(e.target.value)}
-                      placeholder="Enter profit margin amount"
-                    />
-                  </div>
-                </div>
 
                 <Separator />
 
