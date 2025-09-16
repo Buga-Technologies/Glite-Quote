@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
@@ -18,24 +18,24 @@ export type Database = {
         Row: {
           cost: number
           created_at: string
+          description: string | null
           id: string
-          is_default: boolean | null
           service_name: string
           updated_at: string
         }
         Insert: {
           cost: number
           created_at?: string
+          description?: string | null
           id?: string
-          is_default?: boolean | null
           service_name: string
           updated_at?: string
         }
         Update: {
           cost?: number
           created_at?: string
+          description?: string | null
           id?: string
-          is_default?: boolean | null
           service_name?: string
           updated_at?: string
         }
@@ -45,27 +45,48 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_default: boolean | null
           password_hash: string
-          updated_at: string
           username: string
         }
         Insert: {
           created_at?: string
           id?: string
+          is_default?: boolean | null
           password_hash: string
-          updated_at?: string
           username: string
         }
         Update: {
           created_at?: string
           id?: string
+          is_default?: boolean | null
           password_hash?: string
-          updated_at?: string
           username?: string
         }
         Relationships: []
       }
-      bhr_settings: {
+      admins: {
+        Row: {
+          created_at: string | null
+          id: number
+          password: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          password: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          password?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      bhr_config: {
         Row: {
           created_at: string
           id: string
@@ -75,7 +96,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          rate_per_hour?: number
+          rate_per_hour: number
           updated_at?: string
         }
         Update: {
@@ -117,24 +138,27 @@ export type Database = {
         Row: {
           cost: number
           created_at: string
+          description: string | null
           id: string
-          page_range_max: number | null
+          page_range_max: number
           page_range_min: number
           updated_at: string
         }
         Insert: {
           cost: number
           created_at?: string
+          description?: string | null
           id?: string
-          page_range_max?: number | null
+          page_range_max: number
           page_range_min: number
           updated_at?: string
         }
         Update: {
           cost?: number
           created_at?: string
+          description?: string | null
           id?: string
-          page_range_max?: number | null
+          page_range_max?: number
           page_range_min?: number
           updated_at?: string
         }
@@ -191,59 +215,29 @@ export type Database = {
         }
         Relationships: []
       }
-      profit_margins: {
-        Row: {
-          copies_max: number | null
-          copies_min: number
-          created_at: string
-          id: string
-          margin_percentage_1: number
-          margin_percentage_2: number | null
-          updated_at: string
-        }
-        Insert: {
-          copies_max?: number | null
-          copies_min: number
-          created_at?: string
-          id?: string
-          margin_percentage_1: number
-          margin_percentage_2?: number | null
-          updated_at?: string
-        }
-        Update: {
-          copies_max?: number | null
-          copies_min?: number
-          created_at?: string
-          id?: string
-          margin_percentage_1?: number
-          margin_percentage_2?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       toner_costs: {
         Row: {
-          color_type: string
           cost_per_page: number
           created_at: string
           id: string
           size: string
+          type: string
           updated_at: string
         }
         Insert: {
-          color_type: string
           cost_per_page: number
           created_at?: string
           id?: string
           size: string
+          type: string
           updated_at?: string
         }
         Update: {
-          color_type?: string
           cost_per_page?: number
           created_at?: string
           id?: string
           size?: string
+          type?: string
           updated_at?: string
         }
         Relationships: []
@@ -253,7 +247,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_exists: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      seed_default_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_admin_password: {
+        Args: {
+          _admin_id: string
+          _new_password: string
+          _old_password: string
+        }
+        Returns: boolean
+      }
+      verify_admin_password: {
+        Args: { _password: string; _username: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
