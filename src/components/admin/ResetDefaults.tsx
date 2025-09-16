@@ -21,9 +21,8 @@ const ResetDefaults: React.FC = () => {
         supabase.from('cover_costs').delete().neq('id', ''),
         supabase.from('finishing_costs').delete().neq('id', ''),
         supabase.from('packaging_costs').delete().neq('id', ''),
-        supabase.from('bhr_settings').delete().neq('id', ''),
+        supabase.from('bhr_config').delete().neq('id', ''),
         supabase.from('additional_services').delete().neq('id', ''),
-        supabase.from('profit_margins').delete().neq('id', ''),
       ]);
 
       // Re-insert default data (same as in migration)
@@ -49,14 +48,14 @@ const ResetDefaults: React.FC = () => {
           { paper_type: 'Gloss 135gsm', size: 'A4', cost_per_page: 16.25 }
         ],
         tonerCosts: [
-          { color_type: 'B/W', size: 'A6', cost_per_page: 0.5 },
-          { color_type: 'B/W', size: 'A5', cost_per_page: 1 },
-          { color_type: 'B/W', size: '6x9', cost_per_page: 2 },
-          { color_type: 'B/W', size: 'A4', cost_per_page: 2 },
-          { color_type: 'Colour', size: 'A6', cost_per_page: 2.5 },
-          { color_type: 'Colour', size: 'A5', cost_per_page: 5 },
-          { color_type: 'Colour', size: '6x9', cost_per_page: 10 },
-          { color_type: 'Colour', size: 'A4', cost_per_page: 10 }
+          { type: 'B/W', size: 'A6', cost_per_page: 0.5 },
+          { type: 'B/W', size: 'A5', cost_per_page: 1 },
+          { type: 'B/W', size: '6x9', cost_per_page: 2 },
+          { type: 'B/W', size: 'A4', cost_per_page: 2 },
+          { type: 'Colour', size: 'A6', cost_per_page: 2.5 },
+          { type: 'Colour', size: 'A5', cost_per_page: 5 },
+          { type: 'Colour', size: '6x9', cost_per_page: 10 },
+          { type: 'Colour', size: 'A4', cost_per_page: 10 }
         ],
         coverCosts: [
           { cover_type: 'Soft', size: 'A6', cost: 100 },
@@ -80,15 +79,9 @@ const ResetDefaults: React.FC = () => {
           { size: 'A4', cost: 25 }
         ],
         additionalServices: [
-          { service_name: 'Design', cost: 10000, is_default: true },
-          { service_name: 'ISBN', cost: 8000, is_default: true }
+          { service_name: 'Design', cost: 10000 },
+          { service_name: 'ISBN', cost: 8000 }
         ],
-        profitMargins: [
-          { copies_min: 50, copies_max: 100, margin_percentage_1: 100, margin_percentage_2: 90 },
-          { copies_min: 250, copies_max: 500, margin_percentage_1: 80, margin_percentage_2: 60 },
-          { copies_min: 1000, copies_max: 2000, margin_percentage_1: 55, margin_percentage_2: 45 },
-          { copies_min: 5000, copies_max: 10000, margin_percentage_1: 40, margin_percentage_2: 30 }
-        ]
       };
 
       await Promise.all([
@@ -97,9 +90,8 @@ const ResetDefaults: React.FC = () => {
         supabase.from('cover_costs').insert(defaultData.coverCosts),
         supabase.from('finishing_costs').insert(defaultData.finishingCosts),
         supabase.from('packaging_costs').insert(defaultData.packagingCosts),
-        supabase.from('bhr_settings').insert([{ rate_per_hour: 3000 }]),
+        supabase.from('bhr_config').insert([{ rate_per_hour: 3000 }]),
         supabase.from('additional_services').insert(defaultData.additionalServices),
-        supabase.from('profit_margins').insert(defaultData.profitMargins),
       ]);
 
       toast({
@@ -143,7 +135,7 @@ const ResetDefaults: React.FC = () => {
               <li>Delete all current packaging costs and restore defaults</li>
               <li>Reset BHR rate to NGN 3,000 per hour</li>
               <li>Reset additional services to Design (NGN 10,000) and ISBN (NGN 8,000)</li>
-              <li>Reset profit margins to default brackets</li>
+              
             </ul>
           </div>
 

@@ -66,7 +66,7 @@ interface AdditionalService {
   id: string;
   service_name: string;
   cost: number;
-  is_default: boolean;
+  is_default?: boolean;
 }
 
 interface ProfitMargin {
@@ -175,25 +175,23 @@ export const QuoteCalculator: React.FC = () => {
 
   const loadAllCosts = async () => {
     try {
-      const [paperRes, tonerRes, coverRes, finishingRes, packagingRes, bhrRes, additionalRes, profitRes] = await Promise.all([
+      const [paperRes, tonerRes, coverRes, finishingRes, packagingRes, bhrRes, additionalRes] = await Promise.all([
         supabase.from('paper_costs').select('*'),
         supabase.from('toner_costs').select('*'),
         supabase.from('cover_costs').select('*'),
         supabase.from('finishing_costs').select('*'),
         supabase.from('packaging_costs').select('*'),
-        supabase.from('bhr_settings').select('*'),
-        supabase.from('additional_services').select('*'),
-        supabase.from('profit_margins').select('*')
+        supabase.from('bhr_config').select('*'),
+        supabase.from('additional_services').select('*')
       ]);
 
       if (paperRes.data) setPaperCosts(paperRes.data);
-      if (tonerRes.data) setTonerCosts(tonerRes.data);
+      if (tonerRes.data) setTonerCosts(tonerRes.data.map((t: any) => ({ id: t.id, color_type: t.type, size: t.size, cost_per_page: t.cost_per_page })));
       if (coverRes.data) setCoverCosts(coverRes.data);
       if (finishingRes.data) setFinishingCosts(finishingRes.data);
       if (packagingRes.data) setPackagingCosts(packagingRes.data);
-      if (bhrRes.data) setBhrSettings(bhrRes.data);
+      if (bhrRes.data) setBhrSettings(bhrRes.data.map((b: any) => ({ id: b.id, rate_per_hour: Number(b.rate_per_hour) })));
       if (additionalRes.data) setAdditionalServices(additionalRes.data);
-      if (profitRes.data) setProfitMargins(profitRes.data);
     } catch (error) {
       console.error('Error loading costs:', error);
       toast({
