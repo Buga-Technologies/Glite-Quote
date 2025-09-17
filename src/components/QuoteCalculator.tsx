@@ -364,11 +364,11 @@ export const QuoteCalculator: React.FC = () => {
         year: 'numeric'
       });
 
-      // Calculate additional services total (excluding BHR for display)
-      const additionalServicesTotal = calculations.designCost + calculations.isbnCost + calculations.othersCost;
+      // Calculate printing cost total (includes BHR and Profit Margin internally)
+      const printingCostTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost + calculations.bhrCost + calculations.profitAmount;
       
-      // Calculate printing cost total
-      const printingCostTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost;
+      // Calculate additional services total (excluding BHR and Profit Margin)
+      const additionalServicesTotal = calculations.designCost + calculations.isbnCost + calculations.othersCost - quote.applyBulkDiscount;
 
       // Document definition
       const docDefinition: any = {
@@ -467,22 +467,22 @@ export const QuoteCalculator: React.FC = () => {
                 table: {
                   widths: ['*', 'auto'],
                   body: [
-                    [{
-                      text: 'Printing Cost Total',
-                      style: 'totalLabel',
-                      fillColor: '#254BE3',
-                      color: 'white',
-                      bold: true,
-                      margin: [12, 8, 12, 8]
-                    }, {
-                      text: formatCurrency(printingCostTotal),
-                      style: 'totalLabel',
-                      fillColor: '#254BE3',
-                      color: 'white',
-                      bold: true,
-                      alignment: 'right',
-                      margin: [12, 8, 12, 8]
-                    }]
+                     [{
+                       text: 'Printing Cost Total',
+                       style: 'totalLabel',
+                       fillColor: '#254BE3',
+                       color: 'white',
+                       bold: true,
+                       margin: [12, 8, 12, 8]
+                     }, {
+                       text: formatCurrency(printingCostTotal),
+                       style: 'totalLabel',
+                       fillColor: '#254BE3',
+                       color: 'white',
+                       bold: true,
+                       alignment: 'right',
+                       margin: [12, 8, 12, 8]
+                     }]
                   ]
                 },
                 margin: [0, 10, 0, 0]
@@ -505,9 +505,10 @@ export const QuoteCalculator: React.FC = () => {
                 table: {
                   widths: ['*', 'auto'],
                   body: [
-                    ...(quote.includeDesign ? [['Design', `${formatCurrency(calculations.designCost)}`]] : []),
-                    ...(quote.includeISBN ? [['ISBN', `${formatCurrency(calculations.isbnCost)}`]] : []),
-                    ...quote.others.map(item => [item.description, `${formatCurrency(item.cost)}`])
+                     ...(quote.includeDesign ? [['Design', `${formatCurrency(calculations.designCost)}`]] : []),
+                     ...(quote.includeISBN ? [['ISBN', `${formatCurrency(calculations.isbnCost)}`]] : []),
+                     ...quote.others.map(item => [item.description, `${formatCurrency(item.cost)}`]),
+                     ...(quote.applyBulkDiscount > 0 ? [['Bulk Discount', { text: `-${formatCurrency(quote.applyBulkDiscount)}`, color: 'red' }]] : [])
                   ]
                 }
               },
@@ -522,22 +523,22 @@ export const QuoteCalculator: React.FC = () => {
                 table: {
                   widths: ['*', 'auto'],
                   body: [
-                    [{
-                      text: 'Additional Services Total',
-                      style: 'totalLabel',
-                      fillColor: '#254BE3',
-                      color: 'white',
-                      bold: true,
-                      margin: [12, 8, 12, 8]
-                    }, {
-                      text: formatCurrency(additionalServicesTotal),
-                      style: 'totalLabel',
-                      fillColor: '#254BE3',
-                      color: 'white',
-                      bold: true,
-                      alignment: 'right',
-                      margin: [12, 8, 12, 8]
-                    }]
+                     [{
+                       text: 'Additional Services Total',
+                       style: 'totalLabel',
+                       fillColor: '#254BE3',
+                       color: 'white',
+                       bold: true,
+                       margin: [12, 8, 12, 8]
+                     }, {
+                       text: formatCurrency(additionalServicesTotal),
+                       style: 'totalLabel',
+                       fillColor: '#254BE3',
+                       color: 'white',
+                       bold: true,
+                       alignment: 'right',
+                       margin: [12, 8, 12, 8]
+                     }]
                   ]
                 },
                 margin: [0, 10, 0, 0]
@@ -546,22 +547,6 @@ export const QuoteCalculator: React.FC = () => {
             margin: [0, 0, 0, 20]
           }] : []),
 
-          // Bulk Discount (only show if applied)
-          ...(quote.applyBulkDiscount > 0 ? [{
-            layout: {
-              hLineWidth: () => 0.5,
-              vLineWidth: () => 0.5,
-              hLineColor: () => '#E2E8F0',
-              vLineColor: () => '#E2E8F0'
-            },
-            table: {
-              widths: ['*', 'auto'],
-              body: [
-                ['Bulk Discount', `-${formatCurrency(quote.applyBulkDiscount)}`]
-              ]
-            },
-            margin: [0, 0, 0, 10]
-          }] : []),
 
           // Final Quotation
           {
@@ -587,7 +572,7 @@ export const QuoteCalculator: React.FC = () => {
                       fontSize: 16,
                       margin: [12, 8, 12, 8]
                     }, {
-                      text: formatCurrency(calculations.finalQuotation),
+                      text: formatCurrency(printingCostTotal + additionalServicesTotal),
                       style: 'finalQuotationAmount',
                       fillColor: '#254BE3',
                       color: 'white',
