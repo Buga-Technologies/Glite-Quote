@@ -215,6 +215,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profit_margins: {
+        Row: {
+          copies_max: number
+          copies_min: number
+          created_at: string
+          id: string
+          margin_percentage_1: number
+          margin_percentage_2: number
+          updated_at: string
+        }
+        Insert: {
+          copies_max: number
+          copies_min: number
+          created_at?: string
+          id?: string
+          margin_percentage_1: number
+          margin_percentage_2: number
+          updated_at?: string
+        }
+        Update: {
+          copies_max?: number
+          copies_min?: number
+          created_at?: string
+          id?: string
+          margin_percentage_1?: number
+          margin_percentage_2?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       toner_costs: {
         Row: {
           cost_per_page: number
@@ -247,14 +277,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_exists: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      seed_default_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      admin_exists: { Args: never; Returns: boolean }
+      seed_default_admin: { Args: never; Returns: undefined }
       update_admin_password: {
         Args: {
           _admin_id: string
