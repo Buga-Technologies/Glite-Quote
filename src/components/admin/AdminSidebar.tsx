@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/contexts/AdminContext';
+import glitLogo from '@/assets/glit-logo.jpg';
 
 const AdminSidebar: React.FC = () => {
   const { logout } = useAdmin();
@@ -33,8 +34,9 @@ const AdminSidebar: React.FC = () => {
 
   return (
     <div className="bg-white w-64 min-h-screen border-r border-gray-200 flex flex-col">
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-blue-600">Admin Dashboard</h1>
+      <div className="p-6 flex items-center gap-3">
+        <img src={glitLogo} alt="Glit Publishers" className="w-12 h-12 object-contain" />
+        <h1 className="text-xl font-bold text-blue-600">Admin</h1>
       </div>
       
       <nav className="flex-1 px-4 space-y-1">

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/contexts/AdminContext';
+import glitLogo from '@/assets/glit-logo.jpg';
 
 const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -51,6 +52,9 @@ const AdminLogin: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <img src={glitLogo} alt="Glit Publishers" className="w-20 h-20 object-contain" />
+          </div>
           <CardTitle className="text-2xl font-bold text-blue-600">
             Glit Quote Admin
           </CardTitle>
