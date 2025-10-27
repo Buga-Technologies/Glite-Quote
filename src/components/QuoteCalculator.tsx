@@ -238,9 +238,9 @@ export const QuoteCalculator: React.FC = () => {
     const totalFinishingCost = finishingCost * quote.copies;
     const totalPackagingCost = packagingCost * quote.copies;
 
-    const rawCost = totalPaperCost + totalTonerCost + totalCoverCost + totalFinishingCost + totalPackagingCost + designCost + isbnCost + bhrCost + othersCost;
+    const rawCost = totalPaperCost + totalTonerCost + totalCoverCost + totalFinishingCost + totalPackagingCost ;
     const profitAmount = (rawCost * quote.profitMargin) / 100;
-    const finalQuotation = rawCost + profitAmount - quote.applyBulkDiscount;
+    const finalQuotation = rawCost + profitAmount + designCost + isbnCost + bhrCost + othersCost - quote.applyBulkDiscount;
 
     return {
       paperCost: totalPaperCost,
@@ -834,6 +834,7 @@ export const QuoteCalculator: React.FC = () => {
                       onChange={(e) => handlePageCountChange(e.target.value)}
                       placeholder="Enter page count"
                     />
+                    
                   </div>
                   <div>
                     <Label htmlFor="copies" className="flex items-center gap-2 mb-3">
@@ -900,6 +901,7 @@ export const QuoteCalculator: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="B/W">B/W</SelectItem>
                         <SelectItem value="Colour">Colour</SelectItem>
+                        <SelectItem value="B/W & Colour ">B/W & Colour</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
