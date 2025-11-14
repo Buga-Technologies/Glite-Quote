@@ -62,6 +62,8 @@ interface BHRSetting {
   rate_per_hour: number;
 }
 
+
+
 interface AdditionalService {
   id: string;
   service_name: string;
@@ -86,6 +88,8 @@ interface Quote {
   bookSize: string;
   paperType: string;
   interiorType: string;
+  bwPages?: number;      
+  colourPages?: number;  
   coverType: string;
   pageCount: number;
   copies: number;
@@ -208,9 +212,13 @@ export const QuoteCalculator: React.FC = () => {
       p.paper_type === quote.paperType && p.size === quote.bookSize
     )?.cost_per_page || 0;
 
-    const tonerCost = tonerCosts.find(t => 
-      t.color_type === quote.interiorType && t.size === quote.bookSize
-    )?.cost_per_page || 0;
+    const bwToner = tonerCosts.find(t => 
+  t.color_type === "B/W" && t.size === quote.bookSize
+)?.cost_per_page || 0;
+
+const colourToner = tonerCosts.find(t => 
+  t.color_type === "Colour" && t.size === quote.bookSize
+)?.cost_per_page || 0;
 
     const coverCost = coverCosts.find(c => 
       c.cover_type === quote.coverType && c.size === quote.bookSize
@@ -233,7 +241,26 @@ export const QuoteCalculator: React.FC = () => {
     const othersCost = quote.others.reduce((sum, item) => sum + item.cost, 0);
 
     const totalPaperCost = paperCost * quote.pageCount * quote.copies;
-    const totalTonerCost = tonerCost * quote.pageCount * quote.copies;
+    let totalTonerCost = 0;
+
+if (quote.interiorType === "B/W & Colour") {
+
+  const bwPages = quote.bwPages || 0;
+  const colourPages = quote.colourPages || 0;
+
+  totalTonerCost =
+    (bwPages * bwToner * quote.copies) +
+    (colourPages * colourToner * quote.copies);
+
+} else {
+  // Original logic for single-type printing
+  const tonerCost = tonerCosts.find(t =>
+    t.color_type === quote.interiorType && t.size === quote.bookSize
+  )?.cost_per_page || 0;
+
+  totalTonerCost = tonerCost * quote.pageCount * quote.copies;
+}
+
     const totalCoverCost = coverCost * quote.copies;
     const totalFinishingCost = finishingCost * quote.copies;
     const totalPackagingCost = packagingCost * quote.copies;
@@ -365,10 +392,10 @@ export const QuoteCalculator: React.FC = () => {
       });
 
       // Calculate printing cost total (includes BHR and Profit Margin internally)
-      const printingCostTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost + calculations.bhrCost + calculations.profitAmount;
+      const printingCostTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost + calculations.bhrCost + calculations.profitAmount + calculations.othersCost;
       
       // Calculate additional services total (excluding BHR and Profit Margin)
-      const additionalServicesTotal = calculations.designCost + calculations.isbnCost + calculations.othersCost - quote.applyBulkDiscount;
+      const additionalServicesTotal = calculations.designCost + calculations.isbnCost  - quote.applyBulkDiscount;
 
       // Document definition
       const docDefinition: any = {
@@ -381,7 +408,7 @@ export const QuoteCalculator: React.FC = () => {
             table: {
               widths: ['*'],
               body: [[{
-                text: 'Glit Publisher Quote',
+                text: 'Glit Publishers Quote',
                 style: 'header',
                 fillColor: '#254BE3',
                 color: 'white',
@@ -901,9 +928,38 @@ export const QuoteCalculator: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="B/W">B/W</SelectItem>
                         <SelectItem value="Colour">Colour</SelectItem>
-                        <SelectItem value="B/W & Colour ">B/W & Colour</SelectItem>
+                        <SelectItem value="B/W & Colour">B/W & Colour</SelectItem>
+                        
                       </SelectContent>
                     </Select>
+                    {quote.interiorType === "B/W & Colour" && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div>
+      <Label>Black & White Pages</Label>
+      <Input
+        type="number"
+        value={quote.bwPages || ""}
+        onChange={(e) =>
+          setQuote(prev => ({ ...prev, bwPages: parseInt(e.target.value) || 0 }))
+        }
+        placeholder="Enter number of B/W pages"
+      />
+    </div>
+
+    <div>
+      <Label>Colour Pages</Label>
+      <Input
+        type="number"
+        value={quote.colourPages || ""}
+        onChange={(e) =>
+          setQuote(prev => ({ ...prev, colourPages: parseInt(e.target.value) || 0 }))
+        }
+        placeholder="Enter number of colour pages"
+      />
+    </div>
+  </div>
+)}
+                    
                   </div>
                   <div className="md:col-span-2">
                     <div className="bg-royal-blue-light p-4 rounded-lg border border-royal-blue/20">
