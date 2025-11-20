@@ -14,7 +14,7 @@ import {
   Maximize, Layers, FileText, Copy, FileStack,
   Palette, CheckSquare, Settings, PenTool, Book,
   Cpu, Percent, PlusCircle, Receipt, Wallet,
-  User, UserCircle2, Shield, Users, Phone, Mail,
+  User, UserCircle2, Shield, Users, Phone, Mail, Hash, MapPin, Calendar,
   Bookmark, Printer, Palette as PaletteIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -102,6 +102,9 @@ interface Quote {
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
+  customerOrderNo?: string;
+  customerDelivery?: string;
+  customerAddress?: string;
   staffName?: string;
   staffId?: string;
   bhrHours?: number;
@@ -153,6 +156,9 @@ export const QuoteCalculator: React.FC = () => {
     customerName: '',
     customerEmail: '',
     customerPhone: '',
+    customerOrderNo: '',
+    customerDelivery: '',
+    customerAddress: '',
     staffName: '',
     staffId: '',
     bhrHours: 0
@@ -408,7 +414,7 @@ if (quote.interiorType === "B/W & Colour") {
             table: {
               widths: ['*'],
               body: [[{
-                text: 'Glit Publishers Quote',
+                text: 'Glit Publishers Quote - ITEC & TRADE',
                 style: 'header',
                 fillColor: '#254BE3',
                 color: 'white',
@@ -437,12 +443,15 @@ if (quote.interiorType === "B/W & Colour") {
               widths: ['*'],
               body: [[{
                 stack: [
-                  // Customer Information
-                  ...(quote.customerName || quote.customerEmail || quote.customerPhone ? [
+                  // Customer Information 
+                  ...(quote.customerName || quote.customerEmail || quote.customerPhone || quote.customerOrderNo || quote.customerDelivery || quote.customerAddress ? [
                     { text: 'Customer Information', style: 'sectionHeader', margin: [0, 0, 0, 8] },
                     ...(quote.customerName ? [{ text: `Name: ${quote.customerName}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                     ...(quote.customerPhone ? [{ text: `Phone: ${quote.customerPhone}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
-                    ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] }] : [])
+                    ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerOrderNo ? [{ text: `OrderNo: ${quote.customerOrderNo}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerDelivery ? [{ text: `Delivery: ${quote.customerDelivery}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerAddress ? [{ text: `Address: ${quote.customerAddress}`, fontSize: 10, margin: [0, 2, 0, 0] }] : [])
                   ] : []),
                   
                   // Staff Information
@@ -616,8 +625,16 @@ if (quote.interiorType === "B/W & Colour") {
           },
 
           // Contact Details (immediately below Final Quotation)
+          
           {
             stack: [
+              { text: 'Glit Publishers Account Details', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
+              { text: 'Wema Bank - GLIT ITEC & TRADE', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
+              { text: '0126977431', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
+              { text: 'Fidelity Bank - GLIT PUBLISHERS', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
+              { text: '5601605808', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
+              { text: 'Opay Bank - GLIT Publishers', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
+              { text: 'Wema Bank - GLIT ITEC & TRADE', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
               { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' },
               { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' },
               { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] }
@@ -759,6 +776,42 @@ if (quote.interiorType === "B/W & Colour") {
                       value={quote.customerEmail}
                       onChange={(e) => setQuote(prev => ({...prev, customerEmail: e.target.value}))}
                       placeholder="Enter email address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerOrderNo" className="flex items-center gap-2 mb-3">
+                      <Hash className="w-4 h-4" />
+                      Customer Order Number
+                    </Label>
+                    <Input
+                      id="customerOrderNo"
+                      value={quote.customerOrderNo}
+                      onChange={(e) => setQuote(prev => ({...prev, customerOrderNo: e.target.value}))}
+                      placeholder="Enter customer Order Number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerAddress" className="flex items-center gap-2 mb-3">
+                      <MapPin className="w-4 h-4" />
+                      Customer Address
+                    </Label>
+                    <Input
+                      id="customerAddress"
+                      value={quote.customerAddress}
+                      onChange={(e) => setQuote(prev => ({...prev, customerAddress: e.target.value}))}
+                      placeholder="Enter customer Address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerDelivery" className="flex items-center gap-2 mb-3">
+                      <Calendar className="w-4 h-4" />
+                      Customer Delivery Date
+                    </Label>
+                    <Input
+                      id="customerDelivery"
+                      value={quote.customerDelivery}
+                      onChange={(e) => setQuote(prev => ({...prev, customerDelivery: e.target.value}))}
+                      placeholder="Enter customer Delivery Date"
                     />
                   </div>
                 </div>
