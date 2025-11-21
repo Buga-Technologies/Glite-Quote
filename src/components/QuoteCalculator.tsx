@@ -416,7 +416,7 @@ if (quote.interiorType === "B/W & Colour") {
             table: {
               widths: ['*'],
               body: [[{
-                text: 'Glit Publishers Quote - ITEC & TRADE',
+                text: 'Glit Publishers Quote ',
                 style: 'header',
                 fillColor: '#254BE3',
                 color: 'white',
