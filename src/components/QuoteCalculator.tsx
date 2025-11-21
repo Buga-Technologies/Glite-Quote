@@ -625,23 +625,44 @@ if (quote.interiorType === "B/W & Colour") {
           },
 
           // Contact Details (immediately below Final Quotation)
+          { stack: [ 
+           { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' }, 
+           { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' }, 
+           { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] } ], margin: [0, 10, 0, 20] },
           
-          {
-            stack: [
-              { text: 'Glit Publishers Account Details', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Wema Bank - GLIT ITEC & TRADE', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: '0126977431', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Fidelity Bank - GLIT PUBLISHERS', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: '5601605808', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Opay Bank - GLIT Publishers', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Wema Bank - GLIT ITEC & TRADE', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' },
-              { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' },
-              { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] }
-            ],
-            margin: [0, 10, 0, 20]
-          },
-
+         {
+  table: {
+    widths: ['*'],
+    body: [
+      [{ 
+        text: 'Glit Publishers Account Details', 
+        bold: true, 
+        fillColor: '#254BE3',
+        fontSize: 12, 
+        alignment: 'center',
+        margin: [0, 20, 0, 20]
+      }],
+      [{ text: 'Wema Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
+      [{ text: '0126977431', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Fidelity Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
+      [{ text: '5601605808', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Opay Bank - GLIT Publishers', alignment: 'center', fontSize: 12 }],
+      [{ text: '6140476816', alignment: 'center', fontSize: 12 }],
+    ]
+  },
+  
+  layout: {
+    hLineWidth: function() { return 1; },
+    vLineWidth: function() { return 1; },
+    hLineColor: function() { return '#000'; },
+    vLineColor: function() { return '#000'; },
+    paddingLeft: function() { return 8; },
+    paddingRight: function() { return 8; },
+    paddingTop: function() { return 4; },
+    paddingBottom: function() { return 4; }
+  },
+  margin: [0, 10, 0, 20]
+},
           // Footer with line separator
           {
             canvas: [{ 
