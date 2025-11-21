@@ -105,6 +105,7 @@ interface Quote {
   customerOrderNo?: string;
   customerDelivery?: string;
   customerAddress?: string;
+  customerBookTitle?: string;
   staffName?: string;
   staffId?: string;
   bhrHours?: number;
@@ -159,6 +160,7 @@ export const QuoteCalculator: React.FC = () => {
     customerOrderNo: '',
     customerDelivery: '',
     customerAddress: '',
+    customerBookTitle: '',
     staffName: '',
     staffId: '',
     bhrHours: 0
@@ -451,7 +453,8 @@ if (quote.interiorType === "B/W & Colour") {
                     ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                     ...(quote.customerOrderNo ? [{ text: `OrderNo: ${quote.customerOrderNo}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                     ...(quote.customerDelivery ? [{ text: `Delivery: ${quote.customerDelivery}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
-                    ...(quote.customerAddress ? [{ text: `Address: ${quote.customerAddress}`, fontSize: 10, margin: [0, 2, 0, 0] }] : [])
+                    ...(quote.customerAddress ? [{ text: `Address: ${quote.customerAddress}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerBookTitle ? [{ text: `Book Title: ${quote.customerBookTitle}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                   ] : []),
                   
                   // Staff Information
@@ -812,6 +815,18 @@ if (quote.interiorType === "B/W & Colour") {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="customerBookTitle" className="flex items-center gap-2 mb-3">
+                      <Book className="w-4 h-4" />
+                      Customer Book Title
+                    </Label>
+                    <Input
+                      id="customerBookTitle"
+                      value={quote.customerBookTitle}
+                      onChange={(e) => setQuote(prev => ({...prev, customerBookTitle: e.target.value}))}
+                      placeholder="Enter customer Book Title"
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="customerAddress" className="flex items-center gap-2 mb-3">
                       <MapPin className="w-4 h-4" />
                       Customer Address
@@ -835,6 +850,7 @@ if (quote.interiorType === "B/W & Colour") {
                       placeholder="Enter customer Delivery Date"
                     />
                   </div>
+                  
                 </div>
               </CardContent>
             </Card>
