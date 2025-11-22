@@ -105,6 +105,7 @@ interface Quote {
   customerOrderNo?: string;
   customerDelivery?: string;
   customerAddress?: string;
+  customerBookTitle?: string;
   staffName?: string;
   staffId?: string;
   bhrHours?: number;
@@ -159,6 +160,7 @@ export const QuoteCalculator: React.FC = () => {
     customerOrderNo: '',
     customerDelivery: '',
     customerAddress: '',
+    customerBookTitle: '',
     staffName: '',
     staffId: '',
     bhrHours: 0
@@ -414,7 +416,7 @@ if (quote.interiorType === "B/W & Colour") {
             table: {
               widths: ['*'],
               body: [[{
-                text: 'Glit Publishers Quote - ITEC & TRADE',
+                text: 'Glit Publishers Quote ',
                 style: 'header',
                 fillColor: '#254BE3',
                 color: 'white',
@@ -451,7 +453,8 @@ if (quote.interiorType === "B/W & Colour") {
                     ...(quote.customerEmail ? [{ text: `Email: ${quote.customerEmail}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                     ...(quote.customerOrderNo ? [{ text: `OrderNo: ${quote.customerOrderNo}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                     ...(quote.customerDelivery ? [{ text: `Delivery: ${quote.customerDelivery}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
-                    ...(quote.customerAddress ? [{ text: `Address: ${quote.customerAddress}`, fontSize: 10, margin: [0, 2, 0, 0] }] : [])
+                    ...(quote.customerAddress ? [{ text: `Address: ${quote.customerAddress}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
+                    ...(quote.customerBookTitle ? [{ text: `Book Title: ${quote.customerBookTitle}`, fontSize: 10, margin: [0, 2, 0, 0] }] : []),
                   ] : []),
                   
                   // Staff Information
@@ -625,23 +628,44 @@ if (quote.interiorType === "B/W & Colour") {
           },
 
           // Contact Details (immediately below Final Quotation)
+          { stack: [ 
+           { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' }, 
+           { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' }, 
+           { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] } ], margin: [0, 10, 0, 20] },
           
-          {
-            stack: [
-              { text: 'Glit Publishers Account Details', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Wema Bank - GLIT ITEC & TRADE', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: '0126977431', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Fidelity Bank - GLIT PUBLISHERS', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: '5601605808', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Opay Bank - GLIT Publishers', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: 'Wema Bank - GLIT ITEC & TRADE', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] },
-              { text: '08026978666', fontSize: 12, bold: true, alignment: 'center' },
-              { text: '09026557129', fontSize: 12, bold: true, alignment: 'center' },
-              { text: 'glitworkspaces@gmail.com', fontSize: 12, bold: true, alignment: 'center', margin: [0, 0, 0, 12] }
-            ],
-            margin: [0, 10, 0, 20]
-          },
-
+         {
+  table: {
+    widths: ['*'],
+    body: [
+      [{ 
+        text: 'Glit Publishers Account Details', 
+        bold: true, 
+        fillColor: '#254BE3',
+        fontSize: 12, 
+        alignment: 'center',
+        margin: [0, 20, 0, 20]
+      }],
+      [{ text: 'Wema Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
+      [{ text: '0126977431', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Fidelity Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
+      [{ text: '5601605808', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Opay Bank - GLIT Publishers', alignment: 'center', fontSize: 12 }],
+      [{ text: '6140476816', alignment: 'center', fontSize: 12 }],
+    ]
+  },
+  
+  layout: {
+    hLineWidth: function() { return 1; },
+    vLineWidth: function() { return 1; },
+    hLineColor: function() { return '#000'; },
+    vLineColor: function() { return '#000'; },
+    paddingLeft: function() { return 8; },
+    paddingRight: function() { return 8; },
+    paddingTop: function() { return 4; },
+    paddingBottom: function() { return 4; }
+  },
+  margin: [0, 10, 0, 20]
+},
           // Footer with line separator
           {
             canvas: [{ 
@@ -791,6 +815,18 @@ if (quote.interiorType === "B/W & Colour") {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="customerBookTitle" className="flex items-center gap-2 mb-3">
+                      <Book className="w-4 h-4" />
+                      Customer Book Title
+                    </Label>
+                    <Input
+                      id="customerBookTitle"
+                      value={quote.customerBookTitle}
+                      onChange={(e) => setQuote(prev => ({...prev, customerBookTitle: e.target.value}))}
+                      placeholder="Enter customer Book Title"
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="customerAddress" className="flex items-center gap-2 mb-3">
                       <MapPin className="w-4 h-4" />
                       Customer Address
@@ -814,6 +850,7 @@ if (quote.interiorType === "B/W & Colour") {
                       placeholder="Enter customer Delivery Date"
                     />
                   </div>
+                  
                 </div>
               </CardContent>
             </Card>
