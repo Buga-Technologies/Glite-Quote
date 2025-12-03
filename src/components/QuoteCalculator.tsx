@@ -113,6 +113,7 @@ interface Quote {
 }
 
 interface Calculations {
+  baseBeforeTen: any;
   paperCost: number;
   tonerCost: number;
   coverCost: number;
@@ -170,9 +171,13 @@ export const QuoteCalculator: React.FC = () => {
   const [profitMarginPercent, setProfitMarginPercent] = useState<string>('');
   const [profitMarginNGN, setProfitMarginNGN] = useState<string>('');
   const [copiesValue, setCopiesValue] = useState<string>('');
-  const [pageCountValue, setPageCountValue] = useState<string>('');
+  const [tenPercentDiscount, setTenPercentDiscount] = useState<number>(0);
+const [originalBeforeTenPercent, setOriginalBeforeTenPercent] = useState<number>(0);
+const [pageCountValue, setPageCountValue] = useState<string>('');
   const [bulkDiscountEnabled, setBulkDiscountEnabled] = useState<boolean>(false);
   const [bulkDiscountValue, setBulkDiscountValue] = useState<string>('');
+  
+
 
   // New other service form
   const [newOther, setNewOther] = useState<OtherService>({
@@ -216,6 +221,8 @@ export const QuoteCalculator: React.FC = () => {
 
   // Calculate all costs
   const calculations: Calculations = React.useMemo(() => {
+   
+    
     const paperCost = paperCosts.find(p => 
       p.paper_type === quote.paperType && p.size === quote.bookSize
     )?.cost_per_page || 0;
@@ -275,7 +282,11 @@ if (quote.interiorType === "B/W & Colour") {
 
     const rawCost = totalPaperCost + totalTonerCost + totalCoverCost + totalFinishingCost + totalPackagingCost ;
     const profitAmount = (rawCost * quote.profitMargin) / 100;
-    const finalQuotation = rawCost + profitAmount + designCost + isbnCost + bhrCost + othersCost - quote.applyBulkDiscount;
+    const vat = (rawCost  + designCost + isbnCost + bhrCost + othersCost) * 0.075;
+
+   const baseBeforeTen = rawCost + profitAmount + designCost + isbnCost + bhrCost + othersCost + vat - quote.applyBulkDiscount ;
+
+const finalQuotation = baseBeforeTen - tenPercentDiscount ;
 
     return {
       paperCost: totalPaperCost,
@@ -289,9 +300,13 @@ if (quote.interiorType === "B/W & Colour") {
       othersCost,
       rawCost,
       profitAmount,
+      vat,
+      tenPercentDiscount,
+      baseBeforeTen,
       finalQuotation
     };
   }, [quote, paperCosts, tonerCosts, coverCosts, finishingCosts, packagingCosts, bhrSettings, additionalServices]);
+
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -547,10 +562,12 @@ if (quote.interiorType === "B/W & Colour") {
                      ...(quote.includeDesign ? [['Design', `${formatCurrency(calculations.designCost)}`]] : []),
                      ...(quote.includeISBN ? [['ISBN', `${formatCurrency(calculations.isbnCost)}`]] : []),
                      ...quote.others.map(item => [item.description, `${formatCurrency(item.cost)}`]),
-                     ...(quote.applyBulkDiscount > 0 ? [['Bulk Discount', { text: `-${formatCurrency(quote.applyBulkDiscount)}`, color: 'red' }]] : [])
+                    
                   ]
                 }
+                
               },
+              
               // Additional Services Total
               {
                 layout: {
@@ -585,9 +602,65 @@ if (quote.interiorType === "B/W & Colour") {
             ],
             margin: [0, 0, 0, 20]
           }] : []),
+          //Ten Percent Discount
 
-
+{
+                layout: {
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                  hLineColor: () => '#E2E8F0',
+                  vLineColor: () => '#E2E8F0'
+                },
+                table: {
+                  widths: ['*', 'auto'],
+                  body: [
+                     
+                      ...(tenPercentDiscount > 0? [['10% Discount', { text: `-${formatCurrency(tenPercentDiscount)}`, color: 'red' }]]
+    : []
+  )
+                  ]
+                }
+                
+              },
           // Final Quotation
+           {
+            layout: 'noBorders',
+            table: {
+              widths: ['*'],
+              body: [[{
+                layout: {
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                  hLineColor: () => '#E2E8F0',
+                  vLineColor: () => '#E2E8F0'
+                },
+                table: {
+                  widths: ['*', 'auto'],
+                  body: [
+                    [{
+                      text: 'Final Quotation Before 10%',
+                      style: 'finalQuotationLabel',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      fontSize: 16,
+                      margin: [12, 8, 12, 8]
+                    }, {
+                      text: formatCurrency(calculations.baseBeforeTen),
+                      style: 'finalQuotationAmount',
+                      fillColor: '#254BE3',
+                      color: 'white',
+                      bold: true,
+                      fontSize: 16,
+                      alignment: 'right',
+                      margin: [12, 8, 12, 8]
+                    }]
+                  ]
+                }
+              }]]
+            },
+            margin: [0, 20, 0, 20]
+          },
           {
             layout: 'noBorders',
             table: {
@@ -611,7 +684,7 @@ if (quote.interiorType === "B/W & Colour") {
                       fontSize: 16,
                       margin: [12, 8, 12, 8]
                     }, {
-                      text: formatCurrency(printingCostTotal + additionalServicesTotal),
+                      text: formatCurrency(calculations.finalQuotation),
                       style: 'finalQuotationAmount',
                       fillColor: '#254BE3',
                       color: 'white',
@@ -645,12 +718,12 @@ if (quote.interiorType === "B/W & Colour") {
         alignment: 'center',
         margin: [0, 20, 0, 20]
       }],
-      [{ text: 'Wema Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
-      [{ text: '0126977431', alignment: 'center', fontSize: 12 }],
       [{ text: 'Fidelity Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
       [{ text: '5601605808', alignment: 'center', fontSize: 12 }],
-      [{ text: 'Opay Bank - GLIT Publishers', alignment: 'center', fontSize: 12 }],
-      [{ text: '6140476816', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Wema Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
+      [{ text: '0126977431', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Keystone Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
+      [{ text: '1012839925', alignment: 'center', fontSize: 12 }],
     ]
   },
   
@@ -844,6 +917,7 @@ if (quote.interiorType === "B/W & Colour") {
                       Customer Delivery Date
                     </Label>
                     <Input
+                    type="date"
                       id="customerDelivery"
                       value={quote.customerDelivery}
                       onChange={(e) => setQuote(prev => ({...prev, customerDelivery: e.target.value}))}
@@ -1152,7 +1226,9 @@ if (quote.interiorType === "B/W & Colour") {
                         onChange={(e) => handleBulkDiscountChange(e.target.value)}
                         placeholder="Enter discount amount"
                       />
+                     
                     </div>
+                    
                   )}
                 </div>
 
@@ -1315,13 +1391,44 @@ if (quote.interiorType === "B/W & Colour") {
 
                   <Separator />
 
-                  {/* Final Quotation */}
+                 
+                  {/* 10% Discount Button */}
+<Button 
+  variant="outline"
+  className="w-full mb-4"
+  onClick={() => {
+    const original = calculations.baseBeforeTen;
+    const discount = original * 0.10;
+
+    setOriginalBeforeTenPercent(original);
+    setTenPercentDiscount(discount);
+  }}
+>
+  Apply 10% Discount
+</Button>
+
+{/* Show Before & After 10% */}
+{tenPercentDiscount > 0 && (
+  <div className="space-y-2 mb-4">
+    <div className="flex justify-between text-lg">
+      <span className="font-semibold">Price Before 10%:</span>
+      <span className="font-bold">{formatCurrency(calculations.baseBeforeTen)}</span>
+    </div>
+
+    <div className="flex justify-between text-lg text-red-600">
+      <span className="font-semibold">10% Discount:</span>
+      <span className="font-bold">-{formatCurrency(tenPercentDiscount)}</span>
+    </div>
+  </div>
+)}
+ {/* Final Quotation */}
                   <div className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white p-4 rounded-lg">
                     <div className="flex justify-between items-center text-xl">
                       <span className="font-bold">Final Quotation:</span>
                       <span className="font-bold text-right">{formatCurrency(calculations.finalQuotation)}</span>
                     </div>
                   </div>
+
                 </div>
               </CardContent>
             </Card>
