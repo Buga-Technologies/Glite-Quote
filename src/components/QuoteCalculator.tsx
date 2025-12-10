@@ -305,7 +305,7 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
       baseBeforeTen,
       finalQuotation
     };
-  }, [quote, paperCosts, tonerCosts, coverCosts, finishingCosts, packagingCosts, bhrSettings, additionalServices]);
+  }, [quote, paperCosts, tonerCosts, coverCosts, finishingCosts, packagingCosts, bhrSettings, additionalServices, tenPercentDiscount ]);
 
 
   const formatCurrency = (amount: number) => {
@@ -563,6 +563,7 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
                      ...(quote.includeISBN ? [['ISBN', `${formatCurrency(calculations.isbnCost)}`]] : []),
                      ...quote.others.map(item => [item.description, `${formatCurrency(item.cost)}`]),
                     
+                     
                   ]
                 }
                 
