@@ -125,7 +125,7 @@ interface Calculations {
   othersCost: number;
   rawCost: number;
   profitAmount: number;
-  finalQuotation: number;
+ 
 }
 
 export const QuoteCalculator: React.FC = () => {
@@ -171,8 +171,7 @@ export const QuoteCalculator: React.FC = () => {
   const [profitMarginPercent, setProfitMarginPercent] = useState<string>('');
   const [profitMarginNGN, setProfitMarginNGN] = useState<string>('');
   const [copiesValue, setCopiesValue] = useState<string>('');
-  const [tenPercentDiscount, setTenPercentDiscount] = useState<number>(0);
-const [originalBeforeTenPercent, setOriginalBeforeTenPercent] = useState<number>(0);
+  
 const [pageCountValue, setPageCountValue] = useState<string>('');
   const [bulkDiscountEnabled, setBulkDiscountEnabled] = useState<boolean>(false);
   const [bulkDiscountValue, setBulkDiscountValue] = useState<string>('');
@@ -222,7 +221,8 @@ const [pageCountValue, setPageCountValue] = useState<string>('');
   // Calculate all costs
   const calculations: Calculations = React.useMemo(() => {
    
-    
+    const safe = (n: any) => (isNaN(n) || n === undefined || n === null ? 0 : n);
+
     const paperCost = paperCosts.find(p => 
       p.paper_type === quote.paperType && p.size === quote.bookSize
     )?.cost_per_page || 0;
@@ -273,39 +273,40 @@ if (quote.interiorType === "B/W & Colour") {
     t.color_type === quote.interiorType && t.size === quote.bookSize
   )?.cost_per_page || 0;
 
-  totalTonerCost = tonerCost * quote.pageCount * quote.copies;
+  totalTonerCost = safe(tonerCost) * safe(quote.pageCount) * safe(quote.copies);
 }
 
-    const totalCoverCost = coverCost * quote.copies;
-    const totalFinishingCost = finishingCost * quote.copies;
-    const totalPackagingCost = packagingCost * quote.copies;
+    const totalCoverCost = safe(coverCost) *safe(quote.copies);
+    const totalFinishingCost = safe(finishingCost) * safe(quote.copies);
+    const totalPackagingCost = safe(packagingCost) * safe(quote.copies);
 
-    const rawCost = totalPaperCost + totalTonerCost + totalCoverCost + totalFinishingCost + totalPackagingCost ;
-    const profitAmount = (rawCost * quote.profitMargin) / 100;
-    const vat = (rawCost  + designCost + isbnCost + bhrCost + othersCost) * 0.075;
+    const rawCost = safe(totalPaperCost) + safe(totalTonerCost) + safe(totalCoverCost) + safe(totalFinishingCost) + safe(totalPackagingCost) ;
+    const profitAmount = (safe(rawCost) * safe(quote.profitMargin)) / 100;
+    const vat =  (safe(rawCost)  + safe(designCost) + safe(isbnCost) + safe(bhrCost) + safe(othersCost)) * 0.075;
 
-   const baseBeforeTen = rawCost + profitAmount + designCost + isbnCost + bhrCost + othersCost + vat - quote.applyBulkDiscount ;
+  const baseBeforeTen =  safe(rawCost) +  safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost) +  safe(vat) -  safe(quote.applyBulkDiscount);
 
-const finalQuotation = baseBeforeTen - tenPercentDiscount ;
+
 
     return {
-      paperCost: totalPaperCost,
-      tonerCost: totalTonerCost,
-      coverCost: totalCoverCost,
-      finishingCost: totalFinishingCost,
-      packagingCost: totalPackagingCost,
-      bhrCost,
-      designCost,
-      isbnCost,
-      othersCost,
-      rawCost,
-      profitAmount,
-      vat,
-      tenPercentDiscount,
-      baseBeforeTen,
-      finalQuotation
-    };
-  }, [quote, paperCosts, tonerCosts, coverCosts, finishingCosts, packagingCosts, bhrSettings, additionalServices, tenPercentDiscount ]);
+    paperCost: safe(totalPaperCost),
+    tonerCost: safe(totalTonerCost),
+    coverCost: safe(totalCoverCost),
+    finishingCost: safe(totalFinishingCost),
+    packagingCost: safe(totalPackagingCost),
+    bhrCost: safe(bhrCost),
+    designCost: safe(designCost),
+    isbnCost: safe(isbnCost),
+    othersCost: safe(othersCost),
+    rawCost: safe(rawCost),
+    profitAmount: safe(profitAmount),
+    vat: safe(vat),
+    baseBeforeTen: safe(baseBeforeTen),
+  
+
+  };
+
+  }, [quote, paperCosts, tonerCosts, coverCosts, finishingCosts, packagingCosts, bhrSettings, additionalServices]);
 
 
   const formatCurrency = (amount: number) => {
@@ -391,6 +392,7 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
   };
 
   const generatePDF = async (): Promise<void> => {
+    await new Promise(resolve => setTimeout(resolve, 50));
     // Input validation
     if (!quote.bookSize || !quote.paperType || !quote.interiorType || !quote.coverType) {
       toast({
@@ -603,66 +605,9 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
             ],
             margin: [0, 0, 0, 20]
           }] : []),
-          //Ten Percent Discount
-
-{
-                layout: {
-                  hLineWidth: () => 0.5,
-                  vLineWidth: () => 0.5,
-                  hLineColor: () => '#E2E8F0',
-                  vLineColor: () => '#E2E8F0'
-                },
-                table: {
-                  widths: ['*', 'auto'],
-                  body: [
-                     
-                      ...(tenPercentDiscount > 0? [['10% Discount', { text: `-${formatCurrency(tenPercentDiscount)}`, color: 'red' }]]
-    : []
-  )
-                  ]
-                }
-                
-              },
+          
           // Final Quotation
            {
-            layout: 'noBorders',
-            table: {
-              widths: ['*'],
-              body: [[{
-                layout: {
-                  hLineWidth: () => 0.5,
-                  vLineWidth: () => 0.5,
-                  hLineColor: () => '#E2E8F0',
-                  vLineColor: () => '#E2E8F0'
-                },
-                table: {
-                  widths: ['*', 'auto'],
-                  body: [
-                    [{
-                      text: 'Final Quotation Before 10%',
-                      style: 'finalQuotationLabel',
-                      fillColor: '#254BE3',
-                      color: 'white',
-                      bold: true,
-                      fontSize: 16,
-                      margin: [12, 8, 12, 8]
-                    }, {
-                      text: formatCurrency(calculations.baseBeforeTen),
-                      style: 'finalQuotationAmount',
-                      fillColor: '#254BE3',
-                      color: 'white',
-                      bold: true,
-                      fontSize: 16,
-                      alignment: 'right',
-                      margin: [12, 8, 12, 8]
-                    }]
-                  ]
-                }
-              }]]
-            },
-            margin: [0, 20, 0, 20]
-          },
-          {
             layout: 'noBorders',
             table: {
               widths: ['*'],
@@ -685,7 +630,7 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
                       fontSize: 16,
                       margin: [12, 8, 12, 8]
                     }, {
-                      text: formatCurrency(calculations.finalQuotation),
+                      text: formatCurrency(calculations.baseBeforeTen),
                       style: 'finalQuotationAmount',
                       fillColor: '#254BE3',
                       color: 'white',
@@ -700,6 +645,7 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
             },
             margin: [0, 20, 0, 20]
           },
+         
 
           // Contact Details (immediately below Final Quotation)
           { stack: [ 
@@ -1393,42 +1339,8 @@ const finalQuotation = baseBeforeTen - tenPercentDiscount ;
                   <Separator />
 
                  
-                  {/* 10% Discount Button */}
-<Button 
-  variant="outline"
-  className="w-full mb-4"
-  onClick={() => {
-    const original = calculations.baseBeforeTen;
-    const discount = original * 0.10;
-
-    setOriginalBeforeTenPercent(original);
-    setTenPercentDiscount(discount);
-  }}
->
-  Apply 10% Discount
-</Button>
-
-{/* Show Before & After 10% */}
-{tenPercentDiscount > 0 && (
-  <div className="space-y-2 mb-4">
-    <div className="flex justify-between text-lg">
-      <span className="font-semibold">Price Before 10%:</span>
-      <span className="font-bold">{formatCurrency(calculations.baseBeforeTen)}</span>
-    </div>
-
-    <div className="flex justify-between text-lg text-red-600">
-      <span className="font-semibold">10% Discount:</span>
-      <span className="font-bold">-{formatCurrency(tenPercentDiscount)}</span>
-    </div>
-  </div>
-)}
- {/* Final Quotation */}
-                  <div className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white p-4 rounded-lg">
-                    <div className="flex justify-between items-center text-xl">
-                      <span className="font-bold">Final Quotation:</span>
-                      <span className="font-bold text-right">{formatCurrency(calculations.finalQuotation)}</span>
-                    </div>
-                  </div>
+                
+ 
 
                 </div>
               </CardContent>
