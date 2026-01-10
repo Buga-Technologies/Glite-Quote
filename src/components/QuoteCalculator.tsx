@@ -125,6 +125,7 @@ interface Calculations {
   othersCost: number;
   rawCost: number;
   profitAmount: number;
+   vat: number;
  
 }
 
@@ -417,8 +418,9 @@ if (quote.interiorType === "B/W & Colour") {
       });
 
       // Calculate printing cost total (includes BHR and Profit Margin internally)
-      const printingCostTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost + calculations.bhrCost + calculations.profitAmount + calculations.othersCost;
-      
+      const printingCostSubTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost + calculations.bhrCost + calculations.profitAmount + calculations.othersCost ;
+       
+      const printingCostTotal = printingCostSubTotal + calculations.vat;
       // Calculate additional services total (excluding BHR and Profit Margin)
       const additionalServicesTotal = calculations.designCost + calculations.isbnCost  - quote.applyBulkDiscount;
 
@@ -1338,11 +1340,18 @@ if (quote.interiorType === "B/W & Colour") {
 
                   <Separator />
 
-                 
+                  {/* Final Quotation */}
+                  <div className="bg-gradient-to-r from-royal-blue to-royal-blue-dark text-white p-4 rounded-lg">
+                    <div className="flex justify-between items-center text-xl">
+                      <span className="font-bold">Final Quotation:</span>
+                      <span className="font-bold text-right">{formatCurrency(calculations.baseBeforeTen)}</span>
+                    </div>
+                  </div>
                 
  
 
                 </div>
+                
               </CardContent>
             </Card>
 
