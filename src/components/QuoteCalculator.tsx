@@ -125,7 +125,7 @@ interface Calculations {
   othersCost: number;
   rawCost: number;
   profitAmount: number;
-   vat: number;
+
  
 }
 
@@ -283,9 +283,9 @@ if (quote.interiorType === "B/W & Colour") {
 
     const rawCost = safe(totalPaperCost) + safe(totalTonerCost) + safe(totalCoverCost) + safe(totalFinishingCost) + safe(totalPackagingCost) ;
     const profitAmount = (safe(rawCost) * safe(quote.profitMargin)) / 100;
-    const vat =  (safe(rawCost)  + safe(designCost) + safe(isbnCost) + safe(bhrCost) + safe(othersCost)) * 0.075;
+    
 
-  const baseBeforeTen =  safe(rawCost) +  safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost) +  safe(vat) -  safe(quote.applyBulkDiscount);
+  const baseBeforeTen =  safe(rawCost) +  safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost)  -  safe(quote.applyBulkDiscount);
 
 
 
@@ -301,8 +301,7 @@ if (quote.interiorType === "B/W & Colour") {
     othersCost: safe(othersCost),
     rawCost: safe(rawCost),
     profitAmount: safe(profitAmount),
-    vat: safe(vat),
-    baseBeforeTen: safe(baseBeforeTen),
+       baseBeforeTen: safe(baseBeforeTen),
   
 
   };
@@ -420,7 +419,7 @@ if (quote.interiorType === "B/W & Colour") {
       // Calculate printing cost total (includes BHR and Profit Margin internally)
       const printingCostSubTotal = calculations.paperCost + calculations.tonerCost + calculations.coverCost + calculations.finishingCost + calculations.packagingCost + calculations.bhrCost + calculations.profitAmount + calculations.othersCost ;
        
-      const printingCostTotal = printingCostSubTotal + calculations.vat;
+      const printingCostTotal = printingCostSubTotal;
       // Calculate additional services total (excluding BHR and Profit Margin)
       const additionalServicesTotal = calculations.designCost + calculations.isbnCost  - quote.applyBulkDiscount;
 
