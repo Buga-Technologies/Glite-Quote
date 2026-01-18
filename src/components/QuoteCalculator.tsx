@@ -666,12 +666,12 @@ if (quote.interiorType === "B/W & Colour") {
         alignment: 'center',
         margin: [0, 20, 0, 20]
       }],
-      [{ text: 'Fidelity Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
-      [{ text: '5601605808', alignment: 'center', fontSize: 12 }],
       [{ text: 'Wema Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
       [{ text: '0126977431', alignment: 'center', fontSize: 12 }],
       [{ text: 'Keystone Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
       [{ text: '1012839925', alignment: 'center', fontSize: 12 }],
+       [{ text: 'Fidelity Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
+      [{ text: '5601605808', alignment: 'center', fontSize: 12 }],
     ]
   },
   
