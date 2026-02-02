@@ -22,7 +22,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { supabase } from '@/integrations/supabase/client';
 // 🔒 Maintenance mode – set to false to enable the app
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 
 // Database types
 interface PaperCost {
