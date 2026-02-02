@@ -21,6 +21,8 @@ import { Link } from 'react-router-dom';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { supabase } from '@/integrations/supabase/client';
+// 🔒 Maintenance mode – set to false to enable the app
+const MAINTENANCE_MODE = true;
 
 // Database types
 interface PaperCost {
@@ -131,6 +133,23 @@ interface Calculations {
 
 export const QuoteCalculator: React.FC = () => {
   const { toast } = useToast();
+
+  // 🔒 Block site during maintenance
+  if (MAINTENANCE_MODE) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold">🚧 Site Temporarily Unavailable</h1>
+          <p className="text-lg">
+            This system is currently under maintenance.
+          </p>
+          <p className="text-sm opacity-70">
+            Please check back later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // State for all costs from database
   const [paperCosts, setPaperCosts] = useState<PaperCost[]>([]);
