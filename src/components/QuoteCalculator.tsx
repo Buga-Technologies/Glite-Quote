@@ -304,7 +304,7 @@ if (quote.interiorType === "B/W & Colour") {
     const profitAmount = (safe(rawCost) * safe(quote.profitMargin)) / 100;
     
 
-  const baseBeforeTen =  safe(rawCost) +  safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost)  -  safe(quote.applyBulkDiscount);
+  const baseBeforeTen =  safe(rawCost) - safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost)  -  safe(quote.applyBulkDiscount);
 
 
 
