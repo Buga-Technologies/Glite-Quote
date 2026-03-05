@@ -271,7 +271,7 @@ const colourToner = tonerCosts.find(t =>
     const designService = additionalServices.find(s => s.service_name === 'Design');
     const isbnService = additionalServices.find(s => s.service_name === 'ISBN');
     
-    const designCost = quote.includeDesign ? (designService?.cost || 10000) : 0;
+    const designCost = quote.includeDesign ? (designService?.cost || 15000) : 0;
     const isbnCost = quote.includeISBN ? (isbnService?.cost || 8000) : 0;
     const othersCost = quote.others.reduce((sum, item) => sum + item.cost, 0);
 
@@ -1122,7 +1122,7 @@ if (quote.interiorType === "B/W & Colour") {
                     />
                     <Label htmlFor="includeDesign" className="flex items-center gap-2">
                       <PenTool className="w-4 h-4" />
-                      Include Design (NGN 10,000)
+                      Include Design (NGN 15,000)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
