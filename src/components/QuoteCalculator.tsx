@@ -273,7 +273,7 @@ const colourToner = tonerCosts.find(t =>
     const isbnService = additionalServices.find(s => s.service_name === 'ISBN');
     
     const designCost = quote.includeDesign ? (designService?.cost || 15000) : 0;
-    const isbnCost = quote.includeISBN ? (isbnService?.cost || 8000) : 0;
+    const isbnCost = quote.includeISBN ? (isbnService?.cost || 10000) : 0;
     const othersCost = quote.others.reduce((sum, item) => sum + item.cost, 0);
 
     const totalPaperCost = paperCost * quote.pageCount * quote.copies;
@@ -1139,7 +1139,7 @@ if (quote.interiorType === "B/W & Colour") {
                     />
                     <Label htmlFor="includeISBN" className="flex items-center gap-2">
                       <Bookmark className="w-4 h-4" />
-                      Include ISBN (NGN 8,000)
+                      Include ISBN (NGN 10,000)
                     </Label>
                   </div>
                 </div>
