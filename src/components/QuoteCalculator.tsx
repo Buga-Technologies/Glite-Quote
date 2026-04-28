@@ -93,6 +93,9 @@ interface Quote {
   bwPages?: number;      
   colourPages?: number;  
   coverType: string;
+  includeVAT: boolean;
+hardCoverPrice?: number;
+foldedCoverPrice?: number;
   pageCount: number;
   copies: number;
   includeDesign: boolean;
@@ -185,7 +188,10 @@ export const QuoteCalculator: React.FC = () => {
     customerBookTitle: '',
     staffName: '',
     staffId: '',
-    bhrHours: 0
+    bhrHours: 0,
+    includeVAT: false,
+hardCoverPrice: 0,
+foldedCoverPrice: 0
   });
 
   // State for profit margin two-way binding and empty field inputs
@@ -256,9 +262,18 @@ const colourToner = tonerCosts.find(t =>
   t.color_type === "Colour" && t.size === quote.bookSize
 )?.cost_per_page || 0;
 
-    const coverCost = coverCosts.find(c => 
-      c.cover_type === quote.coverType && c.size === quote.bookSize
-    )?.cost || 0;
+   const baseCoverCost = coverCosts.find(c => 
+  c.cover_type === quote.coverType && c.size === quote.bookSize
+)?.cost || 0;
+
+const manualHardCost = quote.hardCoverPrice || 0;
+const manualFoldedCost = quote.foldedCoverPrice || 0;
+
+const coverCost =
+  quote.coverType === "Hard" ? manualHardCost :
+  quote.coverType === "Folded" ? manualFoldedCost :
+  quote.coverType === "Hard+Folded" ? manualHardCost + manualFoldedCost :
+  baseCoverCost;
 
     const finishingCost = finishingCosts.find(f => 
       quote.pageCount >= f.page_range_min && 
@@ -303,7 +318,9 @@ if (quote.interiorType === "B/W & Colour") {
 
     const rawCost = safe(totalPaperCost) + safe(totalTonerCost) + safe(totalCoverCost) + safe(totalFinishingCost) + safe(totalPackagingCost) ;
     const profitAmount = (safe(rawCost) * safe(quote.profitMargin)) / 100;
-    const vat = (rawCost + designCost + isbnCost + bhrCost + othersCost) * 0.075;
+    const vat = quote.includeVAT
+  ? (rawCost + designCost + isbnCost + bhrCost + othersCost) * 0.075
+  : 0;
     
 
   const baseBeforeTen =  safe(rawCost) + safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost) + vat  -  safe(quote.applyBulkDiscount);
@@ -530,7 +547,7 @@ if (quote.interiorType === "B/W & Colour") {
                     ['Cover Type:', quote.coverType],
                     ['Page Count:', quote.pageCount.toString()],
                     ['Copies:', quote.copies.toString()],
-                    ['Total Pages:', (quote.pageCount * quote.copies).toLocaleString()],
+                    
                     ['Paper Type:', quote.paperType],
                     ['Interior Type:', quote.interiorType]
                   ]
@@ -968,6 +985,47 @@ if (quote.interiorType === "B/W & Colour") {
                       </SelectContent>
                     </Select>
                   </div>
+                  {(quote.coverType === "Hard" || quote.coverType === "Hard+Folded") && (
+  <div>
+    <Label htmlFor="hardCoverPrice" className="flex items-center gap-2 mb-3">
+      <Book className="w-4 h-4" />
+      Hard Cover Price Per Copy (NGN)
+    </Label>
+    <Input
+      id="hardCoverPrice"
+      type="number"
+      value={quote.hardCoverPrice || ""}
+      onChange={(e) =>
+        setQuote(prev => ({
+          ...prev,
+          hardCoverPrice: parseFloat(e.target.value) || 0
+        }))
+      }
+      placeholder="Enter hard cover price per copy"
+    />
+  </div>
+)}
+
+{(quote.coverType === "Folded" || quote.coverType === "Hard+Folded") && (
+  <div>
+    <Label htmlFor="foldedCoverPrice" className="flex items-center gap-2 mb-3">
+      <Book className="w-4 h-4" />
+      Folded Cover Price Per Copy (NGN)
+    </Label>
+    <Input
+      id="foldedCoverPrice"
+      type="number"
+      value={quote.foldedCoverPrice || ""}
+      onChange={(e) =>
+        setQuote(prev => ({
+          ...prev,
+          foldedCoverPrice: parseFloat(e.target.value) || 0
+        }))
+      }
+      placeholder="Enter folded cover price per copy"
+    />
+  </div>
+)}
                   <div>
                     <Label htmlFor="coverType" className="flex items-center gap-2 mb-3">
                       <Book className="w-4 h-4" />
@@ -1172,6 +1230,19 @@ if (quote.interiorType === "B/W & Colour") {
                     </div>
                   )}
                 </div>
+                <div className="flex items-center space-x-2">
+  <Switch
+    id="includeVAT"
+    checked={quote.includeVAT}
+    onCheckedChange={(checked) =>
+      setQuote(prev => ({ ...prev, includeVAT: checked }))
+    }
+  />
+  <Label htmlFor="includeVAT" className="flex items-center gap-2">
+    <Receipt className="w-4 h-4" />
+    Apply VAT 7.5%
+  </Label>
+</div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
