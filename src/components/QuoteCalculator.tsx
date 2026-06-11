@@ -709,7 +709,7 @@ if (quote.interiorType === "B/W & Colour") {
       [{ text: 'Fidelity Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
       [{ text: '5601605808', alignment: 'center', fontSize: 12 }],
       
-      [{ text: 'Opay Bank - GLIT ITEC & TRADE', alignment: 'center', fontSize: 12 }],
+      [{ text: 'Opay Bank - GLIT PUBLISHERS', alignment: 'center', fontSize: 12 }],
       [{ text: '6140302343', alignment: 'center', fontSize: 12 }],
      
        
