@@ -31,6 +31,7 @@ const TonerCosts: React.FC = () => {
     fetchTonerCosts();
   }, []);
 
+
   const fetchTonerCosts = async () => {
     try {
       const { data, error } = await supabase
