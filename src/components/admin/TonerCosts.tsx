@@ -38,6 +38,10 @@ const TonerCosts: React.FC = () => {
         .select('*')
         .order('type', { ascending: true });
 
+        console.log("Data:", data);
+        console.log("Error:", error);
+
+
       if (error) throw error;
       setTonerCosts(data || []);
     } catch (error) {

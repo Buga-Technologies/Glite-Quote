@@ -36,6 +36,7 @@ const AdminLogin: React.FC = () => {
           title: 'Login Failed',
           description: 'Invalid username or password',
         });
+        navigate('/admin');
       }
     } catch (error) {
       toast({

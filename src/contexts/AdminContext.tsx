@@ -41,7 +41,12 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         return false;
       }
 
+      console.log("Entered username", username);
+      console.log("Entered password", password);
+      console.log("Hash", adminUsers.password_hash);
+
       const isValidPassword = await bcrypt.compare(password, adminUsers.password_hash);
+      console.log("Password valid", isValidPassword)
       
       if (isValidPassword) {
         localStorage.setItem('admin_token', 'authenticated');

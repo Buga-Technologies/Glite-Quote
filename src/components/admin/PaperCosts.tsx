@@ -30,14 +30,17 @@ const PaperCosts: React.FC = () => {
         .select('*')
         .order('paper_type', { ascending: true });
 
+        console.log("DATA:", data);
+        console.log("ERROR:", error);
+
       if (error) throw error;
       setCosts(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching paper costs:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load paper costs',
+        description: error instanceof Error ? error.message : JSON.stringify(error)
       });
     } finally {
       setLoading(false);
