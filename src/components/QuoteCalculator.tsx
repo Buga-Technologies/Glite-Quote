@@ -115,6 +115,7 @@ foldedCoverPrice?: number;
   staffId?: string;
   bhrHours?: number;
   finishingCostOverride?: number;
+  extraCost: number;
 }
 
 interface Calculations {
@@ -164,6 +165,7 @@ export const QuoteCalculator: React.FC = () => {
   const [bhrSettings, setBhrSettings] = useState<BHRSetting[]>([]);
   const [additionalServices, setAdditionalServices] = useState<AdditionalService[]>([]);
   const [profitMargins, setProfitMargins] = useState<ProfitMargin[]>([]);
+  
 
   // Quote state - no default values for page count, copies and profit margin
   const [quote, setQuote] = useState<Quote>({
@@ -191,7 +193,8 @@ export const QuoteCalculator: React.FC = () => {
     bhrHours: 0,
     includeVAT: false,
 hardCoverPrice: 0,
-foldedCoverPrice: 0
+foldedCoverPrice: 0,
+extraCost: 0,
   });
 
   // State for profit margin two-way binding and empty field inputs
@@ -323,7 +326,7 @@ if (quote.interiorType === "B/W & Colour") {
   : 0;
     
 
-  const baseBeforeTen =  safe(rawCost) + safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost) + vat  -  safe(quote.applyBulkDiscount);
+  const baseBeforeTen =  safe(rawCost) + safe(profitAmount) +  safe(designCost) +  safe(isbnCost) +  safe(bhrCost) +  safe(othersCost) + vat + quote.extraCost -  safe(quote.applyBulkDiscount);
 
 
 
@@ -1107,6 +1110,11 @@ if (quote.interiorType === "B/W & Colour") {
                         <SelectItem value="White 70gsm">White 70gsm</SelectItem>
                         <SelectItem value="Gloss 135gsm">Gloss 135gsm</SelectItem>
                         <SelectItem value="Gloss 115gsm">Gloss 115gsm</SelectItem>
+                        <SelectItem value="Matt 180g">Matt 180gsm</SelectItem>
+                        <SelectItem value="Matt 150g">Matt 150gsm</SelectItem>
+                      <SelectItem value="Art 135g">Art 135gsm</SelectItem>
+                        <SelectItem value="Art 115g">Art 115gsm</SelectItem>
+                     
                       </SelectContent>
                     </Select>
                   </div>
@@ -1300,6 +1308,26 @@ if (quote.interiorType === "B/W & Colour") {
                       Add
                     </Button>
                   </div>
+                  <div className="space-y-2">
+  <Label htmlFor="extraCost">
+    Additional Charge (Hidden from PDF)
+  </Label>
+
+  <Input
+    id="extraCost"
+    type="number"
+    placeholder="Enter additional charge"
+    value={quote.extraCost === 0 ? '' : quote.extraCost}
+    onChange={(e) =>
+      setQuote(prev => ({
+        ...prev,
+        extraCost: parseFloat(e.target.value) || 0,
+      }))
+    }
+  />
+</div>
+
+<Separator />
                   
                   {quote.others.length > 0 && (
                     <div className="mt-4 space-y-2">
@@ -1380,6 +1408,14 @@ if (quote.interiorType === "B/W & Colour") {
                       </div>
                     ))}
                   </div>
+                  {quote.extraCost > 0 && (
+  <div className="flex justify-between">
+    <span>Additional Charge:</span>
+    <span className="font-semibold text-right">
+      {formatCurrency(quote.extraCost)}
+    </span>
+  </div>
+)}
 
                   <Separator />
 
