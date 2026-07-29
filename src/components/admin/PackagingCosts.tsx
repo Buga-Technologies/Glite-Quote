@@ -10,9 +10,13 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 interface PackagingCost {
-  id: string;
-  size: string;
+  
   cost: number;
+  created_at:string;
+    id: string;
+ paper_size: string;
+  min_pages: number;
+  max_pages: number;
 }
 
 const PackagingCosts: React.FC = () => {
@@ -20,10 +24,12 @@ const PackagingCosts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PackagingCost | null>(null);
-  const [formData, setFormData] = useState({
-    size: '',
-    cost: 0,
-  });
+ const [formData, setFormData] = useState({
+  paper_size: '',
+  min_pages: 1,
+  max_pages: 100,
+  cost: 0,
+});
 
   useEffect(() => {
     fetchPackagingCosts();
@@ -34,12 +40,22 @@ const PackagingCosts: React.FC = () => {
       const { data, error } = await supabase
         .from('packaging_costs')
         .select('*')
-        .order('size', { ascending: true });
+        .order('paper_size', { ascending: true })
+.order('min_pages', { ascending: true });
 
-      if (error) throw error;
-      setPackagingCosts(data || []);
+      console.log("Packaging data:", data);
+console.log("Packaging error:", error);
+
+if (error) {
+  console.error(error);
+  throw error;
+}
+
+setPackagingCosts(data ?? []);
     } catch (error) {
-      toast.error('Failed to load packaging costs');
+  console.error(error);
+  toast.error("Failed to load packaging costs");
+
     } finally {
       setLoading(false);
     }
@@ -73,9 +89,11 @@ const PackagingCosts: React.FC = () => {
   const handleEdit = (item: PackagingCost) => {
     setEditingItem(item);
     setFormData({
-      size: item.size,
-      cost: item.cost,
-    });
+  paper_size: item.paper_size,
+  min_pages: item.min_pages,
+  max_pages: item.max_pages,
+  cost: item.cost,
+});
     setDialogOpen(true);
   };
 
@@ -95,7 +113,12 @@ const PackagingCosts: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ size: '', cost: 0 });
+   setFormData({
+  paper_size: '',
+  min_pages: 1,
+  max_pages: 100,
+  cost: 0,
+});
     setEditingItem(null);
   };
 
@@ -125,14 +148,50 @@ const PackagingCosts: React.FC = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="size">Size</Label>
-                <Input
-                  id="size"
-                  value={formData.size}
-                  onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                  required
-                />
-              </div>
+  <Label>Paper Size</Label>
+
+  <Input
+    value={formData.paper_size}
+    onChange={(e) =>
+      setFormData({
+        ...formData,
+        paper_size: e.target.value,
+      })
+    }
+    placeholder="A4, A5, A6, A3, 6x9 Book"
+    required
+  />
+</div>
+
+<div>
+  <Label>Minimum Pages</Label>
+
+  <Input
+    type="number"
+    value={formData.min_pages}
+    onChange={(e) =>
+      setFormData({
+        ...formData,
+        min_pages: parseInt(e.target.value),
+      })
+    }
+  />
+</div>
+
+<div>
+  <Label>Maximum Pages</Label>
+
+  <Input
+    type="number"
+    value={formData.max_pages}
+    onChange={(e) =>
+      setFormData({
+        ...formData,
+        max_pages: parseInt(e.target.value),
+      })
+    }
+  />
+</div>
               <div>
                 <Label htmlFor="cost">Cost (NGN)</Label>
                 <Input
@@ -156,16 +215,20 @@ const PackagingCosts: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Size</TableHead>
-              <TableHead>Cost</TableHead>
+              <TableHead>Paper Size</TableHead>
+<TableHead>Min Pages</TableHead>
+<TableHead>Max Pages</TableHead>
+<TableHead>Cost</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {packagingCosts.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.size}</TableCell>
-                <TableCell>NGN {item.cost.toFixed(2)}</TableCell>
+                <TableCell>{item.paper_size}</TableCell>
+<TableCell>{item.min_pages}</TableCell>
+<TableCell>{item.max_pages}</TableCell>
+<TableCell>₦{item.cost.toFixed(2)}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
