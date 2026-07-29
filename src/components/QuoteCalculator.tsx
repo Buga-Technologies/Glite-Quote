@@ -55,7 +55,9 @@ interface FinishingCost {
 
 interface PackagingCost {
   id: string;
-  size: string;
+  paper_size: string;
+  min_pages: number;
+  max_pages: number;
   cost: number;
 }
 
@@ -283,7 +285,19 @@ const coverCost =
       (f.page_range_max === null || quote.pageCount <= f.page_range_max)
     )?.cost || 0;
 
-    const packagingCost = packagingCosts.find(p => p.size === quote.bookSize)?.cost || 0;
+    console.log("Quote book size:", quote.bookSize);
+console.log("Quote page count:", quote.pageCount);
+console.log("Packaging costs:", packagingCosts);
+
+    const packaging = packagingCosts.find(
+  p =>
+    p.paper_size === quote.bookSize &&
+    quote.pageCount >= p.min_pages &&
+    quote.pageCount <= p.max_pages
+);
+
+const packagingCost = packaging?.cost ?? 0;
+console.log("Matched packaging:", packaging);
 
     const bhrCost = quote.includeBHR && quote.bhrHours ? quote.bhrHours : 0;
 
