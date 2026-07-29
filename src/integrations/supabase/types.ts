@@ -165,27 +165,34 @@ export type Database = {
         Relationships: []
       }
       packaging_costs: {
-        Row: {
-          cost: number
-          created_at: string
-          id: string
-          size: string
-          updated_at: string
-        }
-        Insert: {
-          cost: number
-          created_at?: string
-          id?: string
-          size: string
-          updated_at?: string
-        }
-        Update: {
-          cost?: number
-          created_at?: string
-          id?: string
-          size?: string
-          updated_at?: string
-        }
+  Row: {
+    id: string
+    paper_size: string
+    min_pages: number
+    max_pages: number
+    cost: number
+    created_at: string
+    updated_at: string
+  }
+  Insert: {
+    id?: string
+    paper_size: string
+    min_pages: number
+    max_pages: number
+    cost: number
+    created_at?: string
+    updated_at?: string
+  }
+  Update: {
+    id?: string
+    paper_size?: string
+    min_pages?: number
+    max_pages?: number
+    cost?: number
+    created_at?: string
+    updated_at?: string
+  }
+
         Relationships: []
       }
       paper_costs: {
