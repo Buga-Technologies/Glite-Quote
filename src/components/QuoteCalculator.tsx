@@ -1122,12 +1122,11 @@ if (quote.interiorType === "B/W & Colour") {
                         <SelectItem value="Cream 70gsm">Cream 70gsm</SelectItem>
                         <SelectItem value="White 80gsm">White 80gsm</SelectItem>
                         <SelectItem value="White 70gsm">White 70gsm</SelectItem>
-                        <SelectItem value="Gloss 135gsm">Gloss 135gsm</SelectItem>
-                        <SelectItem value="Gloss 115gsm">Gloss 115gsm</SelectItem>
-                        <SelectItem value="Matt 180g">Matt 180gsm</SelectItem>
+                        <SelectItem value="Gloss 135gsm">Glossy/Art 135gsm</SelectItem>
+                        <SelectItem value="Gloss 115gsm">Glossy/Art 115gsm</SelectItem>
+                        <SelectItem value="Matt 180g">Matt 170gsm</SelectItem>
                         <SelectItem value="Matt 150g">Matt 150gsm</SelectItem>
-                      <SelectItem value="Art 135g">Art 135gsm</SelectItem>
-                        <SelectItem value="Art 115g">Art 115gsm</SelectItem>
+                     
                      
                       </SelectContent>
                     </Select>
