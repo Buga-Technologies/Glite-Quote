@@ -118,6 +118,7 @@ foldedCoverPrice?: number;
   bhrHours?: number;
   finishingCostOverride?: number;
   extraCost: number;
+  layoutCost: number;
 }
 
 interface Calculations {
@@ -170,6 +171,7 @@ export const QuoteCalculator: React.FC = () => {
   
 
   // Quote state - no default values for page count, copies and profit margin
+ const [showLayout, setShowLayout] = useState(false);
   const [quote, setQuote] = useState<Quote>({
     bookSize: '',
     paperType: '',
@@ -197,6 +199,7 @@ export const QuoteCalculator: React.FC = () => {
 hardCoverPrice: 0,
 foldedCoverPrice: 0,
 extraCost: 0,
+layoutCost: 0,
   });
 
   // State for profit margin two-way binding and empty field inputs
@@ -339,10 +342,20 @@ if (quote.interiorType === "B/W & Colour") {
   ? (rawCost + designCost + isbnCost + bhrCost + othersCost) * 0.075
   : 0;
     
+const layoutTotal = safe(quote.layoutCost) * safe(quote.pageCount);
 
-  const baseBeforeTen =  safe(rawCost) + safe(profitAmount) + safe(designCost) + safe(isbnCost) +  safe(bhrCost) +  safe(othersCost) + vat + quote.extraCost -  safe(quote.applyBulkDiscount);
-
-
+const baseBeforeTen =
+  safe(rawCost) +
+  safe(profitAmount) +
+  safe(designCost) +
+  safe(isbnCost) +
+  safe(bhrCost) +
+  safe(othersCost) +
+  vat +
+  quote.extraCost +
+  layoutTotal -
+  safe(quote.applyBulkDiscount);
+ 
 
     return {
     paperCost: safe(totalPaperCost),
@@ -1295,6 +1308,47 @@ if (quote.interiorType === "B/W & Colour") {
                     
                   )}
                 </div>
+              
+                <Separator />
+
+<div className="space-y-3">
+  <Button
+    type="button"
+    variant="outline"
+    onClick={() => setShowLayout(prev => !prev)}
+    className="border-royal-blue text-royal-blue hover:bg-royal-blue-light"
+  >
+    <FileText className="w-4 h-4 mr-2" />
+    Layout
+  </Button>
+
+  {showLayout && (
+    <div>
+      <Label htmlFor="layoutCost" className="flex items-center gap-2 mb-3">
+        <FileText className="w-4 h-4" />
+        Layout Amount Per Copy (NGN)
+      </Label>
+
+      <Input
+        id="layoutCost"
+        type="number"
+        value={quote.layoutCost || ""}
+        onChange={(e) =>
+          setQuote(prev => ({
+            ...prev,
+            layoutCost: parseFloat(e.target.value) || 0
+          }))
+        }
+        placeholder="Enter layout amount per copy"
+      />
+
+      <p className="text-sm text-muted-foreground mt-2">
+        Layout Total:{" "}
+        {formatCurrency(quote.layoutCost * quote.pageCount)}
+      </p>
+    </div>
+  )}
+</div>
 
 
                 <Separator />
