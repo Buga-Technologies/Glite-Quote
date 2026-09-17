@@ -342,7 +342,7 @@ if (quote.interiorType === "B/W & Colour") {
   ? (rawCost + designCost + isbnCost + bhrCost + othersCost) * 0.075
   : 0;
     
-const layoutTotal = safe(quote.layoutCost) * safe(quote.pageCount);
+const layoutTotal = safe(quote.layoutCost);
 
 const baseBeforeTen =
   safe(rawCost) +
@@ -1339,12 +1339,12 @@ const baseBeforeTen =
             layoutCost: parseFloat(e.target.value) || 0
           }))
         }
-        placeholder="Enter layout amount per copy"
+        placeholder="Enter layout amount"
       />
 
       <p className="text-sm text-muted-foreground mt-2">
         Layout Total:{" "}
-        {formatCurrency(quote.layoutCost * quote.pageCount)}
+        {formatCurrency(quote.layoutCost)}
       </p>
     </div>
   )}
